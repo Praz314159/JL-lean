@@ -94,4 +94,25 @@ def Lemma6_Structured (κ : ℝ) (P : Params) : Prop :=
     ∀ (W : Fin r → Fin blocks → Fin m → ℤ), (∀ c i, W c i ≠ 0) →
       μ.real {ω | ∃ c i, normRatio J (W c i) ω ∉ Set.Icc P.α P.β} ≤ κ * r * blocks
 
+/-- **N3 proved** (PROVEN — the union-bound half of Lemma 6). The per-column/per-block reduction is
+the structural core; the Pythagorean `‖vⱼ‖₂² = ∑ᵢ ‖vⱼ,ᵢ‖₂²` concatenation step (combining the
+per-block windows into a single per-column window) is deferred to the full matrix version. -/
+theorem lemma6_structured (κ : ℝ) (P : Params) : Lemma6_Structured κ P := by
+  intro hnorm Ω _ μ _ m r blocks J hJ W hW
+  -- The "some (column, block) is bad" event is the union over the product index of per-pair events.
+  have hset : {ω | ∃ c i, normRatio J (W c i) ω ∉ Set.Icc P.α P.β}
+      = ⋃ p : Fin r × Fin blocks, {ω | normRatio J (W p.1 p.2) ω ∉ Set.Icc P.α P.β} := by
+    ext ω; simp only [Set.mem_setOf_eq, Set.mem_iUnion, Prod.exists]
+  rw [hset]
+  calc
+    μ.real (⋃ p : Fin r × Fin blocks, {ω | normRatio J (W p.1 p.2) ω ∉ Set.Icc P.α P.β})
+        ≤ ∑ p : Fin r × Fin blocks, μ.real {ω | normRatio J (W p.1 p.2) ω ∉ Set.Icc P.α P.β} :=
+      measureReal_iUnion_fintype_le _
+    _ ≤ ∑ _p : Fin r × Fin blocks, κ :=
+      Finset.sum_le_sum fun p _ => hnorm μ J hJ (W p.1 p.2) (hW p.1 p.2)
+    _ = κ * r * blocks := by
+      simp only [Finset.sum_const, Finset.card_univ, Fintype.card_prod, Fintype.card_fin,
+        nsmul_eq_mul, Nat.cast_mul]
+      ring
+
 end JL
