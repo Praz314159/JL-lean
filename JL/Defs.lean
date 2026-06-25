@@ -10,7 +10,8 @@ import Mathlib.Data.Matrix.Mul
 # Core definitions for the ring Johnson–Lindenstrauss lemmas
 
 This file fixes the probability model and the basic geometric quantities used throughout the
-JL development (see `LEMMAS.md` for the lemma DAG and `AUDIT.md` for the Mathlib coverage).
+JL development (see `JL/doc/paper-to-lean-map.md` for the lemma DAG and `JL/doc/mathlib-audit.md`
+for the Mathlib coverage).
 
 Design choices (per project kickoff):
 * **Abstract probability model.** The projection matrix `J` is an arbitrary measurable map
@@ -19,9 +20,14 @@ Design choices (per project kickoff):
   (`IsChiEntry`). This matches Mathlib's `ProbabilityTheory.HasSubgaussianMGF` API for maximal
   reuse, while a concrete `χ` can be supplied later as one instance of `IsChiEntry`.
 * **Integer entries, real norms.** `J` and the witness `w` are integer-valued (χ is supported on
-  `{-1,0,1}` and `w ∈ ℤ^m`); squared norms are computed in `ℝ` via casts. This keeps the
-  `mod q` reduction (`Int.emod`/centered representative) and the sub-Gaussian analysis on the
-  same objects.
+  `{-1,0,1}` and `w ∈ ℤ^m`); norms are computed in `ℝ` via casts. This keeps the `mod q` reduction
+  (centered/balanced representative) and the sub-Gaussian analysis on the same objects.
+* **Norm-form public, squared internal.** RoKoko Lemma 5/6 state every bound on the **ℓ₂ norm**
+  `‖·‖₂` (e.g. `‖Jw‖₂/‖w‖₂ ∈ [αrp, βrp] = [√30, √337]`), *not* the squared norm — there is no typo;
+  the paper's `‖·‖₂` is the ℓ₂ subscript. We therefore expose statements in `l2Norm` form
+  (faithful to the paper and to the conjecture's `Θ(√log)` scaling) and use `sqNorm` only as an
+  internal proof tool, bridged by `l2Norm_sq : l2Norm v ^ 2 = sqNorm v`. The paper's own Lemma 6
+  proof does exactly this (states `‖·‖₂`, squares for the Pythagorean concatenation step).
 -/
 
 open MeasureTheory ProbabilityTheory Matrix
@@ -53,11 +59,27 @@ structure IsChiMatrix {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (μ : 
   /-- Each entry is `χ`-distributed. -/
   entry : ∀ p : Fin n × Fin m, IsChiEntry (fun ω => ((J ω p.1 p.2 : ℤ) : ℝ)) μ
 
-/-- Squared Euclidean norm of an integer vector, computed in `ℝ`: `‖v‖² = ∑ᵢ vᵢ²`. -/
+/-- Squared Euclidean norm of an integer vector, computed in `ℝ`: `‖v‖₂² = ∑ᵢ vᵢ²`.
+Internal proof tool; public statements use `l2Norm` (see file header). -/
 noncomputable def sqNorm {k : ℕ} (v : Fin k → ℤ) : ℝ := ∑ i, ((v i : ℝ)) ^ 2
 
-/-- Squared Euclidean norm of a real vector: `‖v‖² = ∑ᵢ vᵢ²`. -/
+/-- Squared Euclidean norm of a real vector: `‖v‖₂² = ∑ᵢ vᵢ²`. -/
 noncomputable def sqNormR {k : ℕ} (v : Fin k → ℝ) : ℝ := ∑ i, (v i) ^ 2
+
+/-- `sqNorm` is nonnegative (a sum of squares). -/
+theorem sqNorm_nonneg {k : ℕ} (v : Fin k → ℤ) : 0 ≤ sqNorm v :=
+  Finset.sum_nonneg fun _ _ => sq_nonneg _
+
+/-- The Euclidean (ℓ₂) norm of an integer vector, in `ℝ`: `‖v‖₂ = √(∑ᵢ vᵢ²)`. This is the public
+form used in the lemma statements (RoKoko Lemma 5/6 are stated on `‖·‖₂`). -/
+noncomputable def l2Norm {k : ℕ} (v : Fin k → ℤ) : ℝ := Real.sqrt (sqNorm v)
+
+/-- `l2Norm` is nonnegative. -/
+theorem l2Norm_nonneg {k : ℕ} (v : Fin k → ℤ) : 0 ≤ l2Norm v := Real.sqrt_nonneg _
+
+/-- The bridge between the public ℓ₂ norm and the internal squared norm: `‖v‖₂² = ∑ᵢ vᵢ²`. -/
+theorem l2Norm_sq {k : ℕ} (v : Fin k → ℤ) : l2Norm v ^ 2 = sqNorm v :=
+  Real.sq_sqrt (sqNorm_nonneg v)
 
 /-- The projected vector `Jw : Ω → (Fin n → ℤ)`, i.e. the random variable `ω ↦ J ω *ᵥ w`. -/
 def proj {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ) : Ω → (Fin n → ℤ) :=
@@ -67,14 +89,16 @@ def proj {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ)
 verifier observes after the `mod q` reduction. `Int.bmod x q` lands in `[-q/2, q/2)`. -/
 def centeredMod (q : ℕ) (x : ℤ) : ℤ := Int.bmod x q
 
-/-- `‖Jw mod q‖²`: squared norm of the projection after centered reduction mod `q`. -/
-noncomputable def projModSqNorm {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ)
+/-- `‖Jw mod q‖₂`: the ℓ₂ norm of the projection after centered reduction mod `q` (the quantity the
+verifier sees). -/
+noncomputable def projModL2Norm {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ)
     (q : ℕ) : Ω → ℝ :=
-  fun ω => sqNorm (fun i => centeredMod q ((proj J w) ω i))
+  fun ω => l2Norm (fun i => centeredMod q ((proj J w) ω i))
 
-/-- The norm-distortion ratio `‖Jw‖² / ‖w‖²` as a random variable. -/
-noncomputable def ratio {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ) : Ω → ℝ :=
-  fun ω => sqNorm ((proj J w) ω) / sqNorm w
+/-- The norm-distortion ratio `‖Jw‖₂ / ‖w‖₂` as a random variable (RoKoko Lemma 5 (I)). -/
+noncomputable def normRatio {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ) :
+    Ω → ℝ :=
+  fun ω => l2Norm ((proj J w) ω) / l2Norm w
 
 /-- The `i`-th row inner product `⟨rᵢ, w⟩ = (Jw)ᵢ` as a real-valued random variable. -/
 def rowInner {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ) (i : Fin n) : Ω → ℝ :=
@@ -98,10 +122,10 @@ structure IsBin2Matrix {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (μ :
   /-- `Bin₂` has second moment `1` (variance of a difference of two `χ`'s). -/
   snd_moment : ∀ p : Fin n × Fin m, ∫ ω, (((J ω p.1 p.2 : ℤ) : ℝ)) ^ 2 ∂μ = 1
 
-/-- `‖Rw + ŷ mod q‖²`: squared norm of the **masked** projection after centered reduction mod `q`.
+/-- `‖Rw + ŷ mod q‖₂`: the ℓ₂ norm of the **masked** projection after centered reduction mod `q`.
 This is the quantity the verifier sees in the LNP/LaBRADOR protocols (`z = ŷ + Rs`). -/
-noncomputable def maskedProjModSqNorm {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ)
+noncomputable def maskedProjModL2Norm {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ)
     (w : Fin m → ℤ) (yhat : Fin n → ℤ) (q : ℕ) : Ω → ℝ :=
-  fun ω => sqNorm (fun i => centeredMod q ((J ω *ᵥ w) i + yhat i))
+  fun ω => l2Norm (fun i => centeredMod q ((J ω *ᵥ w) i + yhat i))
 
 end JL

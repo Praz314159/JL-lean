@@ -28,7 +28,7 @@ import JL   -- model + analytic hypotheses + regime tag + RoKoko/LNP route state
 ## Layout
 | Path | Contents |
 |------|----------|
-| `JL/Defs.lean` | Probability model (`IsChiEntry`, `IsChiMatrix`, `IsBin2Matrix`) + geometry (`sqNorm`, `proj`, `ratio`, `centeredMod`, `normInf`, `maskedProjModSqNorm`) |
+| `JL/Defs.lean` | Probability model (`IsChiEntry`, `IsChiMatrix`, `IsBin2Matrix`) + geometry (`l2Norm`, `sqNorm`, `proj`, `normRatio`, `projModL2Norm`, `centeredMod`, `normInf`, `maskedProjModL2Norm`) |
 | `JL/Analytic/BerryEsseen.lean` | `BerryEsseenHyp` — the irreducible gap (quantitative CLT) |
 | `JL/Analytic/ChiSquared.lean` | `ChiSquaredTailHyp` — the derivable gap (χ² = Gamma(n/2,1/2) tails) |
 | `JL/RoKoko.lean` | RoKoko/BS23 route targets: `N0_RowSubgaussian`, `Lemma5_NormPreservation`, `Lemma5_ModqSoundness`, `Lemma6_Structured` |

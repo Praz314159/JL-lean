@@ -8,7 +8,8 @@ the full DAG and [`mathlib-audit.md`](mathlib-audit.md) for Mathlib coverage.
 ## Stable (safe to depend on)
 
 - **Probability model & geometry** ([`JL/Defs.lean`](../Defs.lean)): `IsChiEntry`, `IsChiMatrix`,
-  `IsBin2Matrix`, `sqNorm`, `proj`, `ratio`, `centeredMod`, `normInf`, `maskedProjModSqNorm`. These
+  `IsBin2Matrix`, `l2Norm`, `sqNorm`, `proj`, `normRatio`, `projModL2Norm`, `centeredMod`,
+  `normInf`, `maskedProjModL2Norm` (bounds on `l2Norm`; squared internally via `l2Norm_sq`). These
   definitions are the public interface; signatures may still be refined (e.g. a future `JLSource`
   typeclass — see below) but the intended meaning is fixed.
 

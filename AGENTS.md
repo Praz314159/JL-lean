@@ -16,7 +16,9 @@ its single load-bearing analytic gap (Berry–Esseen).
 ## Repo layout (at-a-glance)
 
 - [`JL/Defs.lean`](JL/Defs.lean) — the probability model (`IsChiEntry`, `IsChiMatrix`,
-  `IsBin2Matrix`) and geometry (`sqNorm`, `proj`, `ratio`, `centeredMod`, `normInf`, masked proj).
+  `IsBin2Matrix`) and geometry (`l2Norm`, `sqNorm`, `proj`, `normRatio`, `projModL2Norm`,
+  `centeredMod`, `normInf`, masked proj). Bounds are stated on the ℓ₂ norm (`l2Norm`), squared
+  internally via `l2Norm_sq`.
 - [`JL/Analytic/`](JL/Analytic/) — the analytic inputs that are *assumed*, not proved here:
   `BerryEsseen.lean` (`BerryEsseenHyp`), `ChiSquared.lean` (`ChiSquaredTailHyp`). These are the
   localized gaps; everything downstream consumes them as explicit hypotheses.

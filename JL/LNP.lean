@@ -47,9 +47,8 @@ def Lnp_ModqUnmasked : Prop :=
   ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ} (P : ℕ)
     (R : Ω → Matrix (Fin 256) (Fin m) ℤ), IsBin2Matrix R μ →
     ∀ (b : ℝ), 0 < b → b ≤ (P : ℝ) / (41 * m) → ∀ (w : Fin m → ℤ),
-      (∀ j, (w j : ℝ) ∈ Set.Icc (-(P : ℝ) / 2) ((P : ℝ) / 2)) → b ^ 2 ≤ sqNorm w →
-        μ.real {ω | sqNorm (fun i => centeredMod P ((R ω *ᵥ w) i)) < (b * Real.sqrt 26) ^ 2}
-          < (2 : ℝ) ^ (-(256 : ℤ))
+      (∀ j, (w j : ℝ) ∈ Set.Icc (-(P : ℝ) / 2) ((P : ℝ) / 2)) → b ≤ l2Norm w →
+        μ.real {ω | projModL2Norm R w P ω < b * Real.sqrt 26} < (2 : ℝ) ^ (-(256 : ℤ))
 
 /-- **L9 (LNP22 Lemma 2.9 — masked mod-q soundness, the protocol form).** For `R ← χ=Bin₁^{256×m}`,
 `b ≤ P/(41m)`, `w ∈ [±P/2]^m` with `‖w‖ ≥ b`, and **any** mask `ŷ ∈ ℤ_P^{256}`:
@@ -62,9 +61,9 @@ def Lnp_ModqMasked : Prop :=
   ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ} (P : ℕ)
     (R : Ω → Matrix (Fin 256) (Fin m) ℤ), IsChiMatrix R μ →
     ∀ (b : ℝ), 0 < b → b ≤ (P : ℝ) / (41 * m) → ∀ (w : Fin m → ℤ),
-      (∀ j, (w j : ℝ) ∈ Set.Icc (-(P : ℝ) / 2) ((P : ℝ) / 2)) → b ^ 2 ≤ sqNorm w →
+      (∀ j, (w j : ℝ) ∈ Set.Icc (-(P : ℝ) / 2) ((P : ℝ) / 2)) → b ≤ l2Norm w →
       ∀ yhat : Fin 256 → ℤ,
-        μ.real {ω | maskedProjModSqNorm R w yhat P ω < (b * Real.sqrt 26 / 2) ^ 2}
+        μ.real {ω | maskedProjModL2Norm R w yhat P ω < b * Real.sqrt 26 / 2}
           < (2 : ℝ) ^ (-(128 : ℤ))
 
 /-- **L9a (the symmetrization trick — fully rigorous, the heart of the Berry–Esseen-free route).**

@@ -23,13 +23,14 @@ open MeasureTheory ProbabilityTheory Matrix
 
 namespace JL
 
-/-- Bundled parameters of the ring JL lemma (`n_rp, α_rp, β_rp, b` of RoKoko Lemma 5). -/
+/-- Bundled parameters of the ring JL lemma (`n_rp, α_rp, β_rp, b` of RoKoko Lemma 5). All bounds
+are on the **ℓ₂ norm ratio** `‖Jw‖₂/‖w‖₂` (concretely `[α, β] = [√30, √337]`), per the paper. -/
 structure Params where
   /-- Projection dimension `n_rp`. -/
   n : ℕ
-  /-- Lower norm-preservation constant `α_rp` (for the squared ratio). -/
+  /-- Lower norm-ratio bound `α_rp` (on `‖Jw‖₂/‖w‖₂`); concretely `√30`. -/
   α : ℝ
-  /-- Upper norm-preservation constant `β_rp`. -/
+  /-- Upper norm-ratio bound `β_rp` (on `‖Jw‖₂/‖w‖₂`); concretely `√337`. -/
   β : ℝ
   /-- Modulus slack `b` (the `mod q` shortness threshold uses `θ ≤ q/b`). -/
   b : ℝ
@@ -50,42 +51,47 @@ parameters `(n, α, β)` so that for every width `m`, every χ-matrix `J` of hei
 nonzero `w`, the squared-norm ratio `‖Jw‖²/‖w‖²` lands in `[α, β]` except with probability `κ`.
 Concretely (BS23 Lemma 4.1, `κ = 2⁻¹²⁸`): `n = 256`, `[α, β] = [30, 337]`.
 
-Reachable in *shape* now via Hoeffding-for-sums on `‖Jw‖² = ∑ⱼ ⟨rⱼ,w⟩²` (loose constants); the
-tight `[30,337]` needs sub-exponential Bernstein or `JL.Analytic.ChiSquaredTailHyp` (Gaussian model). -/
-def Lemma5_NormPreservation (κ : ℝ) (q : ℕ) : Prop :=
+Reachable in *shape* now via Hoeffding-for-sums on `‖Jw‖₂² = ∑ⱼ ⟨rⱼ,w⟩²` (loose constants); the
+tight `[√30,√337]` needs sub-exponential Bernstein or `JL.Analytic.ChiSquaredTailHyp` (Gaussian
+model). Part (I) carries no modulus, so this `Prop` (unlike `Lemma5_ModqSoundness`) is `q`-free. -/
+def Lemma5_NormPreservation (κ : ℝ) : Prop :=
   ∃ P : Params, 0 < P.α ∧ P.α ≤ P.β ∧
     ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ}
       (J : Ω → Matrix (Fin P.n) (Fin m) ℤ), IsChiMatrix J μ → ∀ w : Fin m → ℤ, w ≠ 0 →
-        μ.real {ω | ratio J w ω ∉ Set.Icc P.α P.β} ≤ κ
+        μ.real {ω | normRatio J w ω ∉ Set.Icc P.α P.β} ≤ κ
 
-/-- **N2 (Lemma 5, inequality II — the hard half).** With the same parameters as N1, for
-`0 < θ ≤ q/b`, any `w ∈ [±q/2]^m` with `‖w‖² ≥ θ`, the reduced projection `‖Jw mod q‖²` exceeds
-`α·θ` except with probability `κ`: wrap-around mod `q` cannot make a long vector look short.
+/-- **N2 (Lemma 5, inequality II — the hard half).** With the same parameters as N1, for a *norm*
+threshold `0 < θ ≤ q/b` and any `w ∈ [±q/2]^m` with `‖w‖₂ ≥ θ`, the reduced projection norm
+`‖Jw mod q‖₂` exceeds `α·θ` except with probability `κ`: wrap-around mod `q` cannot make a long
+vector look short. (`θ` is an ℓ₂-norm threshold, matching BS23 Lemma 4.2's `‖w‖₂ ≥ b`,
+`‖Πw mod q‖₂ < √30·b` — *not* a squared threshold.)
 
-Proof (BS23 App A) splits on `w`'s geometry — Case 1 (`‖w‖<q/10`, → N1), Case 2 (`‖w‖∞≥q/60`,
-Chernoff), **Case 3 (`‖w‖≥q/10 ∧ ‖w‖∞<q/60`, needs `JL.Analytic.BerryEsseenHyp`)**. The eventual
+Proof (BS23 App A) splits on `w`'s geometry — Case 1 (`‖w‖₂<q/10`, → N1), Case 2 (`‖w‖∞≥q/60`,
+Chernoff), **Case 3 (`‖w‖₂≥q/10 ∧ ‖w‖∞<q/60`, needs `JL.Analytic.BerryEsseenHyp`)**. The eventual
 `theorem` discharging this will take `(hBE : BerryEsseenHyp)`. -/
 def Lemma5_ModqSoundness (κ : ℝ) (q : ℕ) : Prop :=
   ∃ P : Params, 0 < P.α ∧ P.α ≤ P.β ∧ 0 < P.b ∧
     ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ}
       (J : Ω → Matrix (Fin P.n) (Fin m) ℤ), IsChiMatrix J μ →
         ∀ (w : Fin m → ℤ) (θ : ℝ), 0 < θ → θ ≤ q / P.b →
-          (∀ j, (w j : ℝ) ∈ Set.Icc (-(q : ℝ) / 2) ((q : ℝ) / 2)) → θ ≤ sqNorm w →
-            μ.real {ω | projModSqNorm J w q ω ≤ P.α * θ} ≤ κ
+          (∀ j, (w j : ℝ) ∈ Set.Icc (-(q : ℝ) / 2) ((q : ℝ) / 2)) → θ ≤ l2Norm w →
+            μ.real {ω | projModL2Norm J w q ω ≤ P.α * θ} ≤ κ
 
 /-- **N3 (Lemma 6).** Block-diagonal extension `V = (I ⊗ J)·W`: the per-block N1 guarantee lifts to
 a multi-column witness at the cost of a union-bound factor `κ·r·blocks`. Stated as the conditional
 "per-block window bound ⟹ union-bounded bound" so its proof depends only on the *statement* of N1.
 
-Reachable now: pure structural bookkeeping + `MeasureTheory.measure_biUnion_le`. Recommended first
-proof. -/
+Reachable now: pure structural bookkeeping + `MeasureTheory.measure_biUnion_le`. On the critical
+path to a *usable* conjecture (it is the structured form the RoKoko protocol consumes), and its
+union factor `r·blocks` (`= r·m_w/m_rp` in the paper) feeds the asymptotic scaling: end-to-end
+failure `κ` needs per-block `κ/(r·blocks)`, i.e. `n_rp = Θ(log(1/κ) + log(r·m_w/m_rp))`. -/
 def Lemma6_Structured (κ : ℝ) (P : Params) : Prop :=
   (∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ}
     (J : Ω → Matrix (Fin P.n) (Fin m) ℤ), IsChiMatrix J μ → ∀ w : Fin m → ℤ, w ≠ 0 →
-      μ.real {ω | ratio J w ω ∉ Set.Icc P.α P.β} ≤ κ) →
+      μ.real {ω | normRatio J w ω ∉ Set.Icc P.α P.β} ≤ κ) →
   ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m r blocks : ℕ}
     (J : Ω → Matrix (Fin P.n) (Fin m) ℤ), IsChiMatrix J μ →
     ∀ (W : Fin r → Fin blocks → Fin m → ℤ), (∀ c i, W c i ≠ 0) →
-      μ.real {ω | ∃ c i, ratio J (W c i) ω ∉ Set.Icc P.α P.β} ≤ κ * r * blocks
+      μ.real {ω | ∃ c i, normRatio J (W c i) ω ∉ Set.Icc P.α P.β} ≤ κ * r * blocks
 
 end JL

@@ -3,6 +3,15 @@
 Living document. Exact statements, dependencies, and the paper that proves each node.
 Sources are in `/papers`. Citations use the papers' own numbering.
 
+> **CONVENTION & correction (read first).** RoKoko Lemma 5/6 state every bound on the **ℓ₂ norm**
+> `‖·‖₂` — the subscript is the ℓ₂ designation, **not** a square. (An earlier draft of this doc
+> misread the lossy `pdftotext` `₂` as `²`; there is **no typo in the paper**.) So Lemma 5 (I) is
+> `‖Jw‖₂/‖w‖₂ ∈ [α_rp, β_rp] = [√30, √337]`, and the conjecture's `α,β,b = Θ(√log(1/κ))` is the
+> norm-ratio scaling (`Θ(√n)`), consistent. The Lean development is stated on `l2Norm` (public,
+> faithful) and uses `sqNorm` only internally, bridged by `l2Norm_sq` — exactly as the paper's own
+> Lemma 6 proof does (states `‖·‖₂`, squares for the Pythagorean step). In Lemma 5 (II) / Lemma 6
+> (II), `θ` is an ℓ₂-**norm** threshold (`‖w‖₂ ≥ θ`), not a squared one.
+
 Paper key (filenames vs. citation labels):
 - `papers/rokoko.pdf` — **RoKoko** ("RoKoko: Lattice-based Succinct Arguments, a Committed
   Refinement", Klooß–Lai–Nguyen–Osadnik–Tucci). The target paper. Lemma 5, Lemma 6, Conjecture 1,
@@ -85,13 +94,14 @@ variables each bounded in `[−|wᵢ|, |wᵢ|]`, hence sub-Gaussian (Hoeffding's
 For any `q ∈ ℕ`, `κ ∈ (0,1)`, there exist `n_rp, α_rp, β_rp` such that for any `m_rp` and any
 nonzero `w ∈ ℤ^{m_rp}`, with `J ←$ χ^{n_rp × m_rp}`:
 
-> `Pr[ ‖Jw‖² / ‖w‖² ∉ [α_rp, β_rp] ] ≤ κ`.
+> `Pr[ ‖Jw‖₂ / ‖w‖₂ ∉ [α_rp, β_rp] ] ≤ κ`.   (ℓ₂-norm ratio — see CONVENTION note at top.)
 
 BS23 Lemma 4.1 concrete form (`κ = 2⁻¹²⁸`, `n_rp = 256`):
-- `Pr[ |⟨π,w⟩| > 9.5‖w‖ ] ≲ 2⁻¹⁴¹`   (per-row, used by Case 1/3 of N2)
-- `Pr[ ‖Πw‖ < √30·‖w‖ ] ≲ 2⁻¹²⁸`     (lower tail)
-- `Pr[ ‖Πw‖ > √337·‖w‖ ] ≲ 2⁻¹²⁸`    (upper tail)
-So `[α_rp, β_rp] = [30, 337]` for the squared ratio (`√30, √337` for the ratio of norms).
+- `Pr[ |⟨π,w⟩| > 9.5‖w‖₂ ] ≲ 2⁻¹⁴¹`   (per-row, used by Case 1/3 of N2)
+- `Pr[ ‖Πw‖₂ < √30·‖w‖₂ ] ≲ 2⁻¹²⁸`     (lower tail)
+- `Pr[ ‖Πw‖₂ > √337·‖w‖₂ ] ≲ 2⁻¹²⁸`    (upper tail)
+So `[α_rp, β_rp] = [√30, √337]` (ℓ₂-norm ratio). Lean: `normRatio J w ω ∈ [P.α, P.β]`, proved
+internally on `sqNorm` (= `[30, 337]`) via `l2Norm_sq`.
 - **Proven by:** GHL21 Cor 3.2 (Gaussian heuristic) / BS23 Lem 4.1. Both tails are concentration
   of a sum of i.i.d. sub-exponential `⟨rⱼ,w⟩²`. Achlioptas [Ach01] did the ±1 analog.
 - **Reachable now?** Upper tail via Mathlib Hoeffding-for-sums with LOOSE constants; tight
@@ -99,9 +109,9 @@ So `[α_rp, β_rp] = [30, 337]` for the squared ratio (`√30, √337` for the r
   See mathlib-audit.md.
 
 ### [N2] Lemma 5, inequality (II) — mod-q shortness soundness  (BS23 Lemma 4.2)  — HARD HALF
-For `0 < θ ≤ q/b` and `‖w‖² ≥ θ` with `w ∈ [±q/2]^{m_rp}`:
+For `0 < θ ≤ q/b` and `‖w‖₂ ≥ θ` (θ is an ℓ₂-*norm* threshold) with `w ∈ [±q/2]^{m_rp}`:
 
-> `Pr[ ‖Jw mod q‖² ≤ α_rp · θ ] ≤ κ`.
+> `Pr[ ‖Jw mod q‖₂ ≤ α_rp · θ ] ≤ κ`.   (Lean: `projModL2Norm J w q ω ≤ P.α * θ`.)
 
 Concrete (BS23 Lem 4.2): for `w ∈ [±q/2]^d`, `‖w‖ ≥ b`, `b ≤ q/125`:
 `Pr[ ‖Πw mod q‖ < √30·b ] ≲ 2⁻¹²⁸` (their proof gives `< 2⁻¹³⁷`). So `b = 125`.
@@ -131,8 +141,8 @@ Concrete (BS23 Lem 4.2): for `w ∈ [±q/2]^d`, `‖w‖ ≥ b`, `b ≤ q/125`:
 Let `W ∈ ℤ^{m_w × r}` nonzero, `q ∈ ℕ`, `J ←$ χ^{n_rp × m_rp}`, `V := (I_{m_w/m_rp} ⊗ J)·W ∈
 ℤ^{(m_w·n_rp/m_rp) × r}`. With matrix norm = max column Euclidean norm:
 
-> `Pr[ ‖V‖²/‖W‖² ∉ [α_rp,β_rp] ] ≤ κ · r·m_w/m_rp`,
-> `Pr[ ‖V mod q‖² ≤ α_rp·θ ] ≤ κ · m_w/m_rp`   (for `0<θ≤q/b`, `‖W‖²≥θ`, `W ∈ [±q/2]^{m_w×r}`).
+> `Pr[ ‖V‖₂/‖W‖₂ ∉ [α_rp,β_rp] ] ≤ κ · r·m_w/m_rp`,
+> `Pr[ ‖V mod q‖₂ ≤ α_rp·θ ] ≤ κ · m_w/m_rp`   (for `0<θ≤q/b`, `‖W‖₂≥θ`, `W ∈ [±q/2]^{m_w×r}`).
 
 - **Proof:** block-diagonal structure — each column `wⱼ` splits into `m_w/m_rp` chunks of height
   `m_rp`, `vⱼ,ᵢ = J·wⱼ,ᵢ`, norms add under concatenation; apply N1 per chunk + a **union bound**
