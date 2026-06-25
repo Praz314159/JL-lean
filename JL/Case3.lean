@@ -124,4 +124,37 @@ theorem projMod_short_prob_le {n m : ℕ} [IsProbabilityMeasure μ]
   simp only [Set.mem_iInter, Set.mem_setOf_eq] at hmem ⊢
   exact hmem
 
+/-! ### Layer 2 — χ-moments (the data Berry–Esseen consumes)
+
+For Berry–Esseen we feed it the summands `Xⱼ = χⱼ·wⱼ` of a row inner product. The three moment facts
+below come straight from `IsChiEntry` (`χ` valued in `{-1,0,1}`, mean `0`, `E[χ²]=½`). The key
+non-obvious one is the third absolute moment: since `|χ|∈{0,1}` we have `|χ|³=χ²`, so `E|χ|³=½` too;
+hence the per-summand Lyapunov ratio `ρⱼ/σⱼ² = (½|wⱼ|³)/(½wⱼ²) = |wⱼ|`, giving `L = ‖w‖∞`. -/
+
+/-- `E|χ|³ = ½`: on the support `{-1,0,1}` we have `|χ|³ = χ²`, so the third absolute moment equals
+the second moment. -/
+theorem IsChiEntry.thirdMoment {X : Ω → ℝ} (h : IsChiEntry X μ) : ∫ ω, |X ω| ^ 3 ∂μ = 1 / 2 := by
+  rw [← h.snd_moment]
+  apply integral_congr_ae
+  filter_upwards [h.mem] with ω hω
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hω
+  rcases hω with h1 | h1 | h1 <;> rw [h1] <;> norm_num
+
+/-- A scaled χ entry `ω ↦ χ·c` has mean `0`. -/
+theorem IsChiEntry.scaled_mean {X : Ω → ℝ} (h : IsChiEntry X μ) (c : ℝ) :
+    ∫ ω, X ω * c ∂μ = 0 := by
+  rw [integral_mul_const, h.mean_zero, zero_mul]
+
+/-- A scaled χ entry `ω ↦ χ·c` has second moment `½c²` (so variance `½c²`, mean being `0`). -/
+theorem IsChiEntry.scaled_sndMoment {X : Ω → ℝ} (h : IsChiEntry X μ) (c : ℝ) :
+    ∫ ω, (X ω * c) ^ 2 ∂μ = (1 / 2) * c ^ 2 := by
+  simp only [mul_pow]
+  rw [integral_mul_const, h.snd_moment]
+
+/-- A scaled χ entry `ω ↦ χ·c` has third absolute moment `½|c|³`. -/
+theorem IsChiEntry.scaled_thirdMoment {X : Ω → ℝ} (h : IsChiEntry X μ) (c : ℝ) :
+    ∫ ω, |X ω * c| ^ 3 ∂μ = (1 / 2) * |c| ^ 3 := by
+  simp only [abs_mul, mul_pow]
+  rw [integral_mul_const, h.thirdMoment]
+
 end JL
