@@ -54,6 +54,14 @@ These are the localized gaps. Anything depending on them carries the hypothesis 
 - **`JL.Analytic.BerryEsseenHyp`** ([`JL/Analytic/BerryEsseen.lean`](../Analytic/BerryEsseen.lean)) —
   the Lyapunov-form quantitative CLT. Absent from Mathlib (only a *qualitative* CLT exists). This is
   **THE irreducible gap** for the RoKoko/BS23 route (N2 Case 3, Conjecture 1). Stability: **assumed**.
+- **`JL.Analytic.GaussianSmallBallHyp`** ([`JL/Analytic/GaussianSmallBall.lean`](../Analytic/GaussianSmallBall.lean)) —
+  the Gaussian **central small-ball**: a centered Gaussian in the Case-3 variance window puts mass
+  `≤ p₀` on any single half-width-`c` interval (`c` a small fraction of `q`), uniformly in location.
+  This is RoKoko's `0.39`, the **second irreducible analytic input** of Case 3 (alongside Berry–Esseen).
+  Absent from Mathlib (no Gaussian interval-mass/density-peak bound) and **not** derivable from
+  Berry–Esseen. The mod-`q` wrap-around is *not* part of it — that is handled by the sub-Gaussian tail
+  of the row inner product (**N0**, already proved), so only one Berry–Esseen application is needed
+  and the per-row bad probability is `p = p₀ + 2·esseenConst·L/√v + (tiny) < 1`. Stability: **assumed**.
 - **`JL.Analytic.ChiSquaredTailHyp`** ([`JL/Analytic/ChiSquared.lean`](../Analytic/ChiSquared.lean)) —
   χ²_n tail bounds. **Derivable** from Mathlib's `Gamma` distribution + MGF/Chernoff (χ² = Gamma(n/2,2));
   assumed for now, expected to be discharged in-tree. Stability: **assumed (derivable)**.
