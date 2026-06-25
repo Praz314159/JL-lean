@@ -49,25 +49,36 @@ def ConcentrationInterface (c : ℝ) : Prop :=
           ≤ 2 * Real.exp (-(c * ε ^ 2 * (n : ℝ)))
 
 /-- **Pillar 2 interface** — abstracts Berry–Esseen anti-concentration. With per-row bad probability
-`p < 1` (held uniform over the relevant `α`, `β` — the Berry–Esseen constant claim), for any
-χ-matrix of height `n`, any norm threshold `α` and modulus slack `b > 0`, and any `w ∈ [±q/2]^m` with
-`‖w‖₂ ≥ θ`, `0 < θ ≤ q/b`, the mod-`q` soundness bad event `‖Jw mod q‖₂ ≤ α·θ` has probability
-`≤ pⁿ` (the `n` independent rows). -/
-def AntiConcentrationInterface (p : ℝ) (q : ℕ) : Prop :=
+`p < 1` held uniform across the regime (the Berry–Esseen constant claim), for any χ-matrix of height
+`n`, any norm threshold `α` and modulus slack `b > 0`, and any `w ∈ [±q/2]^m` with `‖w‖₂ ≥ θ`,
+`0 < θ ≤ q/b`, the mod-`q` soundness bad event `‖Jw mod q‖₂ ≤ α·θ` has probability `≤ pⁿ`.
+
+**The threshold must lie in the regime where anti-concentration actually gives `p < 1`** — this is
+the correction over the earlier (false, unrestricted-`α`) version:
+* `α ≤ c₀·b` (**sub-modulus**): forces `α·θ ≤ c₀·q`, so the shortness threshold is a bounded fraction
+  of the modulus (the `b ≤ q/const` regime of BS23 Lemma 4.2); and
+* `α ≤ c₁·√n` (**sub-typical**): forces the threshold below the typical norm `√(n/2)·‖w‖₂`, so the
+  bad event is a genuine lower deviation.
+Without these the event can be the whole space (`pⁿ < 1` would be false). The constants `c₀, c₁`
+(regime width) and `p < 1` (uniform per-row bad prob) are exactly what Berry–Esseen must deliver. -/
+def AntiConcentrationInterface (p c₀ c₁ : ℝ) (q : ℕ) : Prop :=
   ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {n m : ℕ}
     (J : Ω → Matrix (Fin n) (Fin m) ℤ), IsChiMatrix J μ → ∀ (α b : ℝ), 0 < b →
-      ∀ (w : Fin m → ℤ) (θ : ℝ), 0 < θ → θ ≤ q / b →
-        (∀ j, (w j : ℝ) ∈ Set.Icc (-(q : ℝ) / 2) ((q : ℝ) / 2)) → θ ≤ l2Norm w →
-          μ.real {ω | projModL2Norm J w q ω ≤ α * θ} ≤ p ^ n
+      α ≤ c₀ * b → α ≤ c₁ * Real.sqrt n →
+        ∀ (w : Fin m → ℤ) (θ : ℝ), 0 < θ → θ ≤ q / b →
+          (∀ j, (w j : ℝ) ∈ Set.Icc (-(q : ℝ) / 2) ((q : ℝ) / 2)) → θ ≤ l2Norm w →
+            μ.real {ω | projModL2Norm J w q ω ≤ α * θ} ≤ p ^ n
 
 /-- A **feasible parameter schedule** for rate constants `(c, p)` and modulus `q`: a schedule
 `κ ↦ (n κ, α κ, β κ, b κ)` whose window matches the Pillar-1 interface at relative width `1/2`, whose
 dimension makes both interface failure bounds `≤ κ`, and whose parameters obey the `Θ` rate laws.
 
 **This bundles exactly the grindable content of Conjecture 1** — the fields are concrete real
-inequalities over the schedule and the rate constants `c, p`; constructing a term of this structure
-is the open scaling/coordination problem (no probability involved). -/
-structure FeasibleSchedule (c p : ℝ) (q : ℕ) where
+inequalities over the schedule and the constants `c, p, c₀, c₁`; constructing a term of this
+structure is the open scaling/coordination problem (no probability involved). In particular the
+schedule must keep the threshold inside the anti-concentration regime (`hreg0`, `hreg1`), which
+is the `α/b` coordination RoKoko hedges on. -/
+structure FeasibleSchedule (c p c₀ c₁ : ℝ) (q : ℕ) where
   /-- Projection-dimension schedule. -/
   n : ℝ → ℕ
   /-- Lower norm-ratio bound schedule. -/
@@ -86,6 +97,11 @@ structure FeasibleSchedule (c p : ℝ) (q : ℕ) where
   hP1 : ∀ κ, 0 < κ → κ < 1 → 2 * Real.exp (-(c * (1 / 2) ^ 2 * (n κ : ℝ))) ≤ κ
   /-- Pillar-2 (anti-concentration) failure `pⁿ` is `≤ κ`. -/
   hP2 : ∀ κ, 0 < κ → κ < 1 → p ^ (n κ) ≤ κ
+  /-- The threshold is **sub-modulus**: `α κ ≤ c₀·b κ` (so `α·θ ≤ c₀·q`) — the anti-concentration
+  regime. This is the `α/b` coordination. -/
+  hreg0 : ∀ κ, 0 < κ → κ < 1 → α κ ≤ c₀ * b κ
+  /-- The threshold is **sub-typical**: `α κ ≤ c₁·√(n κ)` (below the typical norm scale `√(n/2)`). -/
+  hreg1 : ∀ κ, 0 < κ → κ < 1 → α κ ≤ c₁ * Real.sqrt (n κ)
   /-- `n κ = Θ(log(1/κ))`. -/
   hnΘ : ∃ c₁ c₂ : ℝ, 0 < c₁ ∧ 0 < c₂ ∧ ∀ᶠ κ in 𝓝[>] (0 : ℝ),
     c₁ * Real.log (1 / κ) ≤ (n κ : ℝ) ∧ (n κ : ℝ) ≤ c₂ * Real.log (1 / κ)
@@ -105,9 +121,9 @@ schedule's window into the concentration interface (Pillar 1) and its threshold 
 anti-concentration interface (Pillar 2), bounds both failures by `κ` via the schedule's `hP1`/`hP2`,
 and reads off the `Θ` rates from the schedule. No probability internals are touched — the open
 content is entirely in producing the `FeasibleSchedule`. -/
-theorem conjecture1_of_interfaces {c p : ℝ} {q : ℕ}
-    (hConc : ConcentrationInterface c) (hAnti : AntiConcentrationInterface p q)
-    (S : FeasibleSchedule c p q) : Conjecture1_Statement q := by
+theorem conjecture1_of_interfaces {c p c₀ c₁ : ℝ} {q : ℕ}
+    (hConc : ConcentrationInterface c) (hAnti : AntiConcentrationInterface p c₀ c₁ q)
+    (S : FeasibleSchedule c p c₀ c₁ q) : Conjecture1_Statement q := by
   refine ⟨S.n, S.α, S.β, S.b, ?_, S.hnΘ, S.hαΘ, S.hβΘ, S.hbΘ⟩
   intro κ hκ0 hκ1
   refine ⟨?_, ?_⟩
@@ -115,9 +131,9 @@ theorem conjecture1_of_interfaces {c p : ℝ} {q : ℕ}
     intro Ω _ μ _ m J hJ w hw
     rw [S.hα κ, S.hβ κ]
     exact (hConc μ J hJ w hw (1 / 2) (by norm_num) (by norm_num)).trans (S.hP1 κ hκ0 hκ1)
-  · -- Pillar 2: mod-q soundness
+  · -- Pillar 2: mod-q soundness (now requires the schedule to be in the anti-concentration regime)
     intro Ω _ μ _ m J hJ w θ hθ hθb hwmem hwθ
-    exact (hAnti μ J hJ (S.α κ) (S.b κ) (S.hb_pos κ hκ0 hκ1) w θ hθ hθb hwmem hwθ).trans
-      (S.hP2 κ hκ0 hκ1)
+    exact (hAnti μ J hJ (S.α κ) (S.b κ) (S.hb_pos κ hκ0 hκ1) (S.hreg0 κ hκ0 hκ1)
+      (S.hreg1 κ hκ0 hκ1) w θ hθ hθb hwmem hwθ).trans (S.hP2 κ hκ0 hκ1)
 
 end JL.Research

@@ -148,12 +148,28 @@ theorem grind_hnΘ (hc : 0 < c) :
       _ = grindM c p * Real.log 2 + grindM c p * Real.log (1 / κ) + 1 := by rw [hlog2κ_eq]; ring
       _ ≤ (grindM c p + 1) * Real.log (1 / κ) := by nlinarith [hbig]
 
+/-- The lower window endpoint at relative width `1/2` is `√(n/4) = √n/2`, so it is `≤ d·√n` for any
+`d ≥ 1/2`. This discharges *both* anti-concentration regime conditions for the schedule (`α ≤ c₀·b`
+with `b = √n`, and `α ≤ c₁·√n`) — the `α/b` coordination, which holds precisely because the
+concentration window's lower endpoint sits a constant factor below the typical scale `√(n/2)`. -/
+theorem windowLo_half_le (n : ℕ) {d : ℝ} (hd : 1 / 2 ≤ d) :
+    windowLo n (1 / 2) ≤ d * Real.sqrt n := by
+  have hdnn : (0 : ℝ) ≤ d := by linarith
+  have hnn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have hd2 : (1 : ℝ) / 4 ≤ d ^ 2 := by nlinarith [sq_nonneg (d - 1 / 2)]
+  calc windowLo n (1 / 2) = Real.sqrt ((n : ℝ) / 4) := by rw [windowLo]; congr 1; ring
+    _ ≤ Real.sqrt (d ^ 2 * n) :=
+        Real.sqrt_le_sqrt (by linarith [mul_le_mul_of_nonneg_right hd2 hnn])
+    _ = d * Real.sqrt n := by rw [Real.sqrt_mul (sq_nonneg d), Real.sqrt_sq hdnn]
+
 /-- **First grinding pass — a concrete `FeasibleSchedule`** for the explicit schedule
 `n κ = ⌈M·log(2/κ)⌉`, `α = √(n/4)`, `β = √(3n/4)`, `b = √n`. The two failure bounds (`hP1`, `hP2`),
-the dimension rate (`hnΘ`, via `grind_hnΘ`), and the plumbing (`hα`/`hβ`/`hb_pos`) are **proved**;
-the three `√`-image rate obligations (`hαΘ`/`hβΘ`/`hbΘ`) remain explicit premises — the next grind
-chunk. Feeding this to `conjecture1_of_interfaces` yields `Conjecture1_Statement q`. -/
+the dimension rate (`hnΘ`, via `grind_hnΘ`), the anti-concentration **regime** conditions
+(`hreg0`/`hreg1`, via `windowLo_half_le` — valid for regime widths `d₀, d₁ ≥ 1/2`), and the plumbing
+are **proved**; the three `√`-image rate obligations (`hαΘ`/`hβΘ`/`hbΘ`) remain explicit premises.
+Feeding this to `conjecture1_of_interfaces` yields `Conjecture1_Statement q`. -/
 noncomputable def grindSchedule (q : ℕ) (hc : 0 < c) (hp0 : 0 < p) (hp1 : p < 1)
+    (d₀ d₁ : ℝ) (hd₀ : 1 / 2 ≤ d₀) (hd₁ : 1 / 2 ≤ d₁)
     (hαΘ : ∃ c₁ c₂ : ℝ, 0 < c₁ ∧ 0 < c₂ ∧ ∀ᶠ κ in 𝓝[>] (0 : ℝ),
       c₁ * Real.sqrt (Real.log (1 / κ)) ≤ windowLo (grindDim c p κ) (1 / 2) ∧
         windowLo (grindDim c p κ) (1 / 2) ≤ c₂ * Real.sqrt (Real.log (1 / κ)))
@@ -163,7 +179,7 @@ noncomputable def grindSchedule (q : ℕ) (hc : 0 < c) (hp0 : 0 < p) (hp1 : p < 
     (hbΘ : ∃ c₁ c₂ : ℝ, 0 < c₁ ∧ 0 < c₂ ∧ ∀ᶠ κ in 𝓝[>] (0 : ℝ),
       c₁ * Real.sqrt (Real.log (1 / κ)) ≤ Real.sqrt (grindDim c p κ) ∧
         Real.sqrt (grindDim c p κ) ≤ c₂ * Real.sqrt (Real.log (1 / κ))) :
-    FeasibleSchedule c p q where
+    FeasibleSchedule c p d₀ d₁ q where
   n := grindDim c p
   α := fun κ => windowLo (grindDim c p κ) (1 / 2)
   β := fun κ => windowHi (grindDim c p κ) (1 / 2)
@@ -174,6 +190,8 @@ noncomputable def grindSchedule (q : ℕ) (hc : 0 < c) (hp0 : 0 < p) (hp1 : p < 
     Real.sqrt_pos.mpr (Nat.cast_pos.mpr (grindDim_pos hc hκ0 hκ1))
   hP1 := fun _ hκ0 hκ1 => grind_hP1 hc hκ0 hκ1
   hP2 := fun _ hκ0 hκ1 => grind_hP2 hp0 hp1 hκ0 hκ1
+  hreg0 := fun κ _ _ => windowLo_half_le (grindDim c p κ) hd₀
+  hreg1 := fun κ _ _ => windowLo_half_le (grindDim c p κ) hd₁
   hnΘ := grind_hnΘ hc
   hαΘ := hαΘ
   hβΘ := hβΘ

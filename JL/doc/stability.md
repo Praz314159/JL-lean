@@ -89,7 +89,12 @@ discharging them appears and this file is updated.
 - **Grinding harness** ([`JL/Research/Harness.lean`](../Research/Harness.lean)) — the structure for
   attacking the conjecture with the deep machinery abstracted away.
   - **Explicit tool interfaces**: `ConcentrationInterface c` (`≤ 2e^{−cε²n}`, Pillar 1, ← Bernstein/χ²)
-    and `AntiConcentrationInterface p q` (`≤ pⁿ` with `p<1`, Pillar 2, ← Berry–Esseen).
+    and `AntiConcentrationInterface p c₀ c₁ q` (`≤ pⁿ` with `p<1`, Pillar 2, ← Berry–Esseen).
+    **The anti-concentration interface is regime-restricted** (`α ≤ c₀·b` sub-modulus, `α ≤ c₁·√n`
+    sub-typical): the earlier unrestricted-`α` version was *false* (for large `α` the bad event is the
+    whole space, so no `p<1` could satisfy it) — a non-dischargeable hypothesis. The regime is exactly
+    where Berry–Esseen gives uniform `p<1`, and the schedule must keep the threshold inside it
+    (`hreg0`/`hreg1`) — the `α/b` coordination RoKoko hedges on.
   - **`FeasibleSchedule c p q`** — a schedule `κ↦(n,α,β,b)` plus the *concrete inequalities*
     (`hP1`,`hP2` make both interface failures `≤ κ`; `hnΘ`,`hαΘ`,`hβΘ`,`hbΘ` give the `Θ` rates).
     **Constructing one is the grind** — a finite list of `exp`/`log`/`pow`/`Θ` inequalities, no
@@ -108,10 +113,13 @@ discharging them appears and this file is updated.
   - `grind_hnΘ` (PROVEN): `n κ = ⌈M·log(2/κ)⌉ = Θ(log(1/κ))` — lower `M·log(1/κ) ≤ n κ`
     (`Nat.le_ceil` + `log(2/κ) ≥ log(1/κ)`); upper `n κ ≤ (M+1)·log(1/κ)` eventually
     (`Nat.ceil_lt_add_one` + `log(1/κ) > M·log2+1` once `κ < e^{−(M·log2+1)}`).
-  - `grindSchedule` now assembles `hP1`/`hP2`/`hnΘ` + plumbing into a `FeasibleSchedule`, leaving
-    only the **three `√`-image rate obligations `hαΘ`/`hβΘ`/`hbΘ` as explicit premises** — the next
-    grind chunk (each is `√·` of `hnΘ`). Then `conjecture1_of_interfaces (…) (grindSchedule …)`
-    closes the conjecture modulo the two tool interfaces + those three rate bounds.
+  - `grind_hnΘ` (PROVEN) + `windowLo_half_le` (PROVEN, discharges both regime conditions `hreg0`/`hreg1`
+    for regime widths `≥ 1/2`, since `α = √(n/4) = √n/2` sits at `α/b = 1/2`).
+  - `grindSchedule` now assembles `hP1`/`hP2`/`hnΘ`/`hreg0`/`hreg1` + plumbing into a
+    `FeasibleSchedule`, leaving only the **three `√`-image rate obligations `hαΘ`/`hβΘ`/`hbΘ` as
+    explicit premises** — the next grind chunk (each is `√·` of `hnΘ`). Then
+    `conjecture1_of_interfaces (…) (grindSchedule …)` closes the conjecture modulo the two
+    (now faithful) tool interfaces + those three rate bounds.
 
 ## Out of scope (for now)
 
