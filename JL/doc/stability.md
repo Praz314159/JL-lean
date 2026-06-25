@@ -13,6 +13,15 @@ the full DAG and [`mathlib-audit.md`](mathlib-audit.md) for Mathlib coverage.
   definitions are the public interface; signatures may still be refined (e.g. a future `JLSource`
   typeclass — see below) but the intended meaning is fixed.
 
+## Proved (theorems, machine-checked)
+
+- **ℓ₂/squared bridge** ([`JL/Defs.lean`](../Defs.lean)): `sqNorm_nonneg`, `l2Norm_nonneg`,
+  `l2Norm_sq : l2Norm v ^ 2 = sqNorm v`.
+- **N3 `lemma6_structured`** ([`JL/RoKoko.lean`](../RoKoko.lean)) — the Lemma 6 union bound: from the
+  per-block norm-window hypothesis, the probability that *some* `(column, block)` pair violates the
+  window is `≤ κ·r·blocks`. (The Pythagorean per-column concatenation, combining blocks into one
+  column window, is still deferred to the full matrix version.)
+
 ## Assumed analytic inputs (named hypotheses — NOT proved here)
 
 These are the localized gaps. Anything depending on them carries the hypothesis explicitly.
@@ -29,9 +38,9 @@ These are the localized gaps. Anything depending on them carries the hypothesis 
 Do not depend on these as if proved — they are formal targets, not theorems, until a `theorem`
 discharging them appears and this file is updated.
 
-- **N0–N3** ([`JL/RoKoko.lean`](../RoKoko.lean)) — Lemma 5 (I) norm preservation, Lemma 5 (II) mod-q
-  soundness, Lemma 6 structured extension. N3 (union bound) and N0 (Hoeffding) are the cheapest,
-  fully-rigorous first targets.
+- **N0–N2** ([`JL/RoKoko.lean`](../RoKoko.lean)) — Lemma 5 (I) norm preservation, Lemma 5 (II) mod-q
+  soundness, and `N0_RowSubgaussian`. N0 (per-row sub-Gaussianity via Hoeffding's lemma) is the next
+  fully-rigorous target. (N3 is now **Proved**, above.)
 - **L7, L9, L9a, L10** ([`JL/LNP.lean`](../LNP.lean)) — the LNP22 Berry–Esseen-free route. L7 (ℓ∞ ARP)
   and L9a (symmetrization) are fully rigorous; L10/L9 bottom out at `ChiSquaredTailHyp`, not
   Berry–Esseen.
