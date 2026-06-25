@@ -160,6 +160,65 @@ def Lemma5_ModqSoundness (κ : ℝ) (q : ℕ) : Prop :=
           (∀ j, (w j : ℝ) ∈ Set.Icc (-(q : ℝ) / 2) ((q : ℝ) / 2)) → θ ≤ l2Norm w →
             μ.real {ω | projModL2Norm J w q ω ≤ P.α * θ} ≤ κ
 
+/-! ### N2, decomposed into BS23 Appendix A's three geometric cases
+
+The mod-q soundness splits on the geometry of `w` (BS23 Appendix A). We localize each case's analytic
+core as a named hypothesis `CaseᵢHyp` (shared parameters `P`, failure budget `κ`, modulus `q`) and
+prove the **assembly** `lemma5_modq_soundness`: the case split is exhaustive (every `w` is in some
+regime) and `w` is fixed (not random), so we dispatch to the one applicable case — no union over
+regimes. Each `CaseᵢHyp` is the same `Lemma5_ModqSoundness` body restricted to its regime; the
+"come back and discharge" path for each is recorded below. -/
+
+/-- **Case 1** (`‖w‖₂ < q/10`): no wrap-around is possible, so the mod-`q` norm equals the true norm
+unless some row exceeds `0.95q`; reduces to N1's lower window (`‖Jw‖₂ ≥ √30‖w‖₂ ≥ √30·θ`) plus a
+per-row "no wrap" tail. *Discharge:* `lemma5_norm_preservation` + a centered-mod-is-identity bound. -/
+def Case1Hyp (P : Params) (κ : ℝ) (q : ℕ) : Prop :=
+  ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ}
+    (J : Ω → Matrix (Fin P.n) (Fin m) ℤ), IsChiMatrix J μ →
+      ∀ (w : Fin m → ℤ) (θ : ℝ), 0 < θ → θ ≤ q / P.b →
+        (∀ j, (w j : ℝ) ∈ Set.Icc (-(q : ℝ) / 2) ((q : ℝ) / 2)) → θ ≤ l2Norm w →
+          l2Norm w < (q : ℝ) / 10 →
+            μ.real {ω | projModL2Norm J w q ω ≤ P.α * θ} ≤ κ
+
+/-- **Case 2** (`‖w‖∞ ≥ q/60`): a Chernoff bound on the count of coordinates whose contribution
+exceeds `q/120` (≤ ½ per row, so ≤ 29 of 256 rows stay small with prob `< 2⁻¹²⁸`). *Discharge:* a
+binomial/Chernoff tail (Mathlib sub-Gaussian + the per-row conditioning argument). -/
+def Case2Hyp (P : Params) (κ : ℝ) (q : ℕ) : Prop :=
+  ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ}
+    (J : Ω → Matrix (Fin P.n) (Fin m) ℤ), IsChiMatrix J μ →
+      ∀ (w : Fin m → ℤ) (θ : ℝ), 0 < θ → θ ≤ q / P.b →
+        (∀ j, (w j : ℝ) ∈ Set.Icc (-(q : ℝ) / 2) ((q : ℝ) / 2)) → θ ≤ l2Norm w →
+          (q : ℝ) / 60 ≤ (normInf w : ℝ) →
+            μ.real {ω | projModL2Norm J w q ω ≤ P.α * θ} ≤ κ
+
+/-- **Case 3** (`‖w‖₂ ≥ q/10 ∧ ‖w‖∞ < q/60`): **the irreducible core.** Build `v` with
+`q/11 ≤ ‖v‖₂ < q/10` on a subset of `w`'s support; `⟨π,v⟩` is a sum of many small independent terms,
+so **Berry–Esseen anti-concentration** gives per-row failure probability `p(α,β) < 1`, and `256` rows
+give `2⁻Θ(n)`. *Discharge:* `JL.Analytic.BerryEsseenHyp` + the `v`-construction. -/
+def Case3Hyp (P : Params) (κ : ℝ) (q : ℕ) : Prop :=
+  ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ}
+    (J : Ω → Matrix (Fin P.n) (Fin m) ℤ), IsChiMatrix J μ →
+      ∀ (w : Fin m → ℤ) (θ : ℝ), 0 < θ → θ ≤ q / P.b →
+        (∀ j, (w j : ℝ) ∈ Set.Icc (-(q : ℝ) / 2) ((q : ℝ) / 2)) → θ ≤ l2Norm w →
+          (q : ℝ) / 10 ≤ l2Norm w → (normInf w : ℝ) < (q : ℝ) / 60 →
+            μ.real {ω | projModL2Norm J w q ω ≤ P.α * θ} ≤ κ
+
+/-- **N2 assembly (PROVEN).** The mod-q soundness follows from the three per-case bounds by an
+exhaustive split on `w`'s geometry. Since `w` is fixed (the randomness is over `J`), `w` lies in
+exactly one applicable regime and we dispatch to it — no union bound over cases is needed. This makes
+BS23 Appendix A's case structure machine-checked; the analytic content lives in `Case₁₋₃Hyp`. -/
+theorem lemma5_modq_soundness {κ : ℝ} {q : ℕ} (P : Params)
+    (hα : 0 < P.α) (hαβ : P.α ≤ P.β) (hb : 0 < P.b)
+    (h1 : Case1Hyp P κ q) (h2 : Case2Hyp P κ q) (h3 : Case3Hyp P κ q) :
+    Lemma5_ModqSoundness κ q := by
+  refine ⟨P, hα, hαβ, hb, ?_⟩
+  intro Ω _ μ _ m J hJ w θ hθ hθb hwmem hwθ
+  rcases lt_or_ge (l2Norm w) ((q : ℝ) / 10) with hlt | hge
+  · exact h1 μ J hJ w θ hθ hθb hwmem hwθ hlt
+  · rcases lt_or_ge ((normInf w : ℝ)) ((q : ℝ) / 60) with hinf | hinf
+    · exact h3 μ J hJ w θ hθ hθb hwmem hwθ hge hinf
+    · exact h2 μ J hJ w θ hθ hθb hwmem hwθ hinf
+
 /-- **N3 (Lemma 6).** Block-diagonal extension `V = (I ⊗ J)·W`: the per-block N1 guarantee lifts to
 a multi-column witness at the cost of a union-bound factor `κ·r·blocks`. Stated as the conditional
 "per-block window bound ⟹ union-bounded bound" so its proof depends only on the *statement* of N1.

@@ -30,6 +30,13 @@ the full DAG and [`mathlib-audit.md`](mathlib-audit.md) for Mathlib coverage.
   input): the norm window `[√a, √b]` is the `√·` image of the squared window `[a, b]`, via
   `normRatio_eq_sqrt` + `l2Norm_sq`. The `√·`/window/division bookkeeping is fully proved; only the
   analytic concentration is assumed. Also: bridge lemmas `sqNorm_pos`, `normRatio_eq_sqrt`.
+- **N2 assembly `lemma5_modq_soundness`** ([`JL/RoKoko.lean`](../RoKoko.lean)) — Lemma 5 (II) mod-q
+  soundness, **conditional on `Case1Hyp`/`Case2Hyp`/`Case3Hyp`**. The proved content is BS23
+  Appendix A's *case split*: the three geometric regimes (`‖w‖₂<q/10` / `‖w‖∞≥q/60` /
+  `‖w‖₂≥q/10 ∧ ‖w‖∞<q/60`) are exhaustive, and since `w` is fixed the bad-event bound dispatches to
+  the one applicable case (no union over regimes). Each `CaseᵢHyp` is the same body restricted to its
+  regime; discharge paths: Case 1 → N1 + a no-wrap bound; Case 2 → Chernoff; Case 3 → `BerryEsseenHyp`
+  + the `v`-construction (the irreducible core).
 
 ## Assumed analytic inputs (named hypotheses — NOT proved here)
 
@@ -53,8 +60,12 @@ These are the localized gaps. Anything depending on them carries the hypothesis 
 Do not depend on these as if proved — they are formal targets, not theorems, until a `theorem`
 discharging them appears and this file is updated.
 
-- **N2** ([`JL/RoKoko.lean`](../RoKoko.lean)) — Lemma 5 (II) mod-q soundness. The next target; Case 3
-  needs `BerryEsseenHyp`. (N0, N1, N3 are now **Proved**/proved-conditional, above.)
+- **N2 cases** ([`JL/RoKoko.lean`](../RoKoko.lean)) — `Case1Hyp` (→ N1 + no-wrap), `Case2Hyp`
+  (Chernoff), `Case3Hyp` (→ `BerryEsseenHyp` + `v`-construction). The N2 *assembly* is now
+  **Proved**-conditional (above); these per-case bounds are the remaining targets. Discharging
+  `Case1Hyp` (from N1) is the cheapest next step; `Case3Hyp` is the irreducible core.
+- **Conjecture 1 assembly** — once N1 + N2 + Lemma 6 are in place, `conjecture1_of_berryEsseen` is the
+  scaling/assembly target (`JL/Research/`).
 - **L7, L9, L9a, L10** ([`JL/LNP.lean`](../LNP.lean)) — the LNP22 Berry–Esseen-free route. L7 (ℓ∞ ARP)
   and L9a (symmetrization) are fully rigorous; L10/L9 bottom out at `ChiSquaredTailHyp`, not
   Berry–Esseen.
