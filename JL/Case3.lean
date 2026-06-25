@@ -229,4 +229,22 @@ theorem abs_le_or_ge_of_centeredMod_le {q : ℕ} {x : ℤ} {c : ℝ}
       rw [abs_mul, abs_of_nonneg hq]
     nlinarith [hk1, hq, hrev, habs, h, mul_le_mul_of_nonneg_left hk1 hq]
 
+/-- **Measure-level center/wrap split.** The per-row bad event splits (by the dichotomy above) into
+the central interval `{|⟨rᵢ,w⟩| ≤ c}` and the wrap-around tail `{q − c ≤ |⟨rᵢ,w⟩|}`. The first is
+bounded by Berry–Esseen + the Gaussian small-ball; the second by the sub-Gaussian tail
+(`rowInner_abs_ge_le`). -/
+theorem perRow_split [IsProbabilityMeasure μ] {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ)
+    (w : Fin m → ℤ) (q : ℕ) (i : Fin n) {c : ℝ} :
+    μ.real {ω | |(centeredMod q ((proj J w) ω i) : ℝ)| ≤ c}
+      ≤ μ.real {ω | |rowInner J w i ω| ≤ c}
+        + μ.real {ω | (q : ℝ) - c ≤ |rowInner J w i ω|} := by
+  have hsub : {ω | |(centeredMod q ((proj J w) ω i) : ℝ)| ≤ c}
+      ⊆ {ω | |rowInner J w i ω| ≤ c} ∪ {ω | (q : ℝ) - c ≤ |rowInner J w i ω|} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq] at hω
+    rcases abs_le_or_ge_of_centeredMod_le hω with h | h
+    · exact Or.inl h
+    · exact Or.inr h
+  exact (measureReal_mono hsub).trans (measureReal_union_le _ _)
+
 end JL
