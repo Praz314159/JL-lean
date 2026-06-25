@@ -1,0 +1,12 @@
+# Lean build artifacts
+/.lake
+
+# Autoformalization scratch (OFF for now — see project guardrails)
+/auto
+
+# Source PDFs — copyrighted; not redistributed. Cited (with eprint links) in
+# JL/doc/paper-to-lean-map.md so contributors can fetch their own copies.
+/papers
+
+# macOS
+.DS_Store

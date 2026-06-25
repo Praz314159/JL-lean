@@ -1,0 +1,54 @@
+name: Lean Action CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject proof-term `sorry` and user-declared `axiom`
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, sys
+
+          # Strip Lean `/- ... -/` block comments (non-greedy, DOTALL) and `--` line
+          # comments, then scan for forbidden tokens. Comment-aware because docstrings
+          # and header comments legitimately mention the words "sorry" / "axiom".
+          BLOCK = re.compile(r"/-.*?-/", re.DOTALL)
+          LINE  = re.compile(r"--[^\n]*")
+          SORRY = re.compile(r"(?<![A-Za-z0-9_])sorry(?![A-Za-z0-9_])")
+          # `axiom Foo : ...` — a new user-declared axiom. Allows `axiomName`, `axioms`,
+          # and `#print axioms ...` (a query, not a declaration).
+          AXIOM = re.compile(r"^\s*axiom\s+[A-Za-z_]", re.MULTILINE)
+
+          root = pathlib.Path("JL")
+          sorry_offenders, axiom_offenders = [], []
+          for path in root.rglob("*.lean"):
+              src = path.read_text(encoding="utf-8")
+              stripped = LINE.sub("", BLOCK.sub("", src))
+              if SORRY.search(stripped):
+                  sorry_offenders.append(str(path))
+              if AXIOM.search(stripped):
+                  axiom_offenders.append(str(path))
+
+          failed = False
+          if sorry_offenders:
+              print("::error::Proof-term `sorry` found in:")
+              for f in sorry_offenders:
+                  print(f"  - {f}")
+              failed = True
+          if axiom_offenders:
+              print("::error::User-declared `axiom` found in:")
+              for f in axiom_offenders:
+                  print(f"  - {f}")
+              failed = True
+          if failed:
+              sys.exit(1)
+          print("Clean: no proof-term `sorry`, no user-declared `axiom` in JL/.")
+          PY
+      - uses: leanprover/lean-action@v1
