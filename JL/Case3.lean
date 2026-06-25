@@ -331,4 +331,31 @@ theorem perRow_bound [IsProbabilityMeasure μ] {n m : ℕ} (J : Ω → Matrix (F
   have hwrap := rowInner_abs_ge_le J hJ w i (ε := (q : ℝ) - c) (by linarith)
   exact (perRow_split J w q i).trans (add_le_add hcentral hwrap)
 
+/-! ### Layer 3 — the constant chase (`p = 0.39 + 2·0.15 < 1`)
+
+The per-row bound is `p = (p₀ + 2δ) + wrap`. The question RoKoko hedges on is whether, in the Case-3
+regime, the *constants* satisfy `p < 1` uniformly. They do, with comfortable margin — and the
+load-bearing piece (the Berry–Esseen slack `δ`, the only one tied to the sharp Esseen constant) is
+pure arithmetic, verified below. -/
+
+/-- **The Berry–Esseen slack in Case 3 is `< 0.146`.** With the sharp Esseen constant
+`esseenConst = 0.56` (Korolev–Shevtsova) and the regime ratio `L/√v ≤ (q/60)/(q/(11√2)) = 11√2/60`,
+the per-CDF Berry–Esseen error `δ = esseenConst·L/√v` is below `0.146` — RoKoko's `0.15`. This is the
+single constant tied to Berry–Esseen, and it is fully machine-checked. -/
+theorem case3_delta_bound : Analytic.esseenConst * (11 * Real.sqrt 2 / 60) < 0.146 := by
+  have h2 : Real.sqrt 2 < 1.4143 := by
+    have : (2 : ℝ) < 1.4143 ^ 2 := by norm_num
+    exact (Real.sqrt_lt' (by norm_num)).mpr this
+  have hnn : 0 ≤ Real.sqrt 2 := Real.sqrt_nonneg 2
+  simp only [Analytic.esseenConst]
+  nlinarith [h2, hnn]
+
+/-- **The per-row budget closes below `1`.** With the small-ball `p₀ ≤ 0.40` (the central interval),
+the Berry–Esseen slack `δ ≤ 0.146` (`case3_delta_bound`), and the sub-Gaussian wrap `≤ 0.001`
+(in fact `≈ 10⁻²⁰`), the per-row bad probability `p = (p₀ + 2δ) + wrap ≤ 0.693 < 1`. So the constant
+coordination RoKoko hedges on does close — with margin `≈ 0.31`. -/
+theorem case3_budget_closes {p₀ δ wrap : ℝ}
+    (hp0 : p₀ ≤ 0.40) (hδ : δ ≤ 0.146) (hwrap : wrap ≤ 0.001) :
+    (p₀ + 2 * δ) + wrap < 1 := by linarith
+
 end JL
