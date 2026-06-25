@@ -247,4 +247,46 @@ theorem perRow_split [IsProbabilityMeasure μ] {n m : ℕ} (J : Ω → Matrix (F
     · exact Or.inr h
   exact (measureReal_mono hsub).trans (measureReal_union_le _ _)
 
+/-! ### Layer 2d — the central interval (the single Berry–Esseen application)
+
+Berry–Esseen transfers the central-interval probability of `S = ⟨rᵢ,w⟩` to the matching Gaussian at
+the cost of `2δ` (two CDF evaluations), where the Gaussian mass is bounded by the small-ball `p₀`.
+The integer/atom boundary is sidestepped by using the strictly-lower cut `{S ≤ −c−1}`: a point with
+`|S| ≤ c` has `S > −c−1`, so it survives the set difference, and no atom term appears. -/
+
+/-- **Central-interval Berry–Esseen transfer.** If the CDF of `S` is `δ`-close to that of `N(0,v)`
+(Berry–Esseen) and the Gaussian puts mass `≤ p₀` on `[−c−1, c]` (small-ball), then
+`Pr[|S| ≤ c] ≤ p₀ + 2δ`. This is the lone Berry–Esseen application of Case 3. -/
+theorem central_interval_le [IsProbabilityMeasure μ] {S : Ω → ℝ} (hSmeas : Measurable S)
+    {v : NNReal} {c δ p₀ : ℝ} (hc : 0 ≤ c)
+    (hbe : ∀ x : ℝ, |μ.real {ω | S ω ≤ x} - (gaussianReal 0 v).real (Set.Iic x)| ≤ δ)
+    (hsb : (gaussianReal 0 v).real (Set.Icc (-c - 1) c) ≤ p₀) :
+    μ.real {ω | |S ω| ≤ c} ≤ p₀ + 2 * δ := by
+  have hsub : {ω | |S ω| ≤ c} ⊆ {ω | S ω ≤ c} \ {ω | S ω ≤ -c - 1} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq] at hω
+    refine ⟨(abs_le.mp hω).2, ?_⟩
+    intro hB
+    simp only [Set.mem_setOf_eq] at hB
+    linarith [(abs_le.mp hω).1]
+  have hBA : {ω | S ω ≤ -c - 1} ⊆ {ω | S ω ≤ c} := by
+    intro ω hω; simp only [Set.mem_setOf_eq] at *; linarith [hc]
+  have hmeasB : MeasurableSet {ω | S ω ≤ -c - 1} := hSmeas measurableSet_Iic
+  have hcov : (gaussianReal 0 v).real (Set.Iic c)
+      ≤ (gaussianReal 0 v).real (Set.Iic (-c - 1))
+        + (gaussianReal 0 v).real (Set.Icc (-c - 1) c) := by
+    have hc' : Set.Iic c ⊆ Set.Iic (-c - 1) ∪ Set.Icc (-c - 1) c := by
+      intro x hx
+      simp only [Set.mem_Iic] at hx
+      by_cases hxle : x ≤ -c - 1
+      · exact Or.inl hxle
+      · exact Or.inr ⟨(not_le.mp hxle).le, hx⟩
+    exact (measureReal_mono hc').trans (measureReal_union_le _ _)
+  have hbe1 := abs_le.mp (hbe c)
+  have hbe2 := abs_le.mp (hbe (-c - 1))
+  calc μ.real {ω | |S ω| ≤ c}
+      ≤ μ.real ({ω | S ω ≤ c} \ {ω | S ω ≤ -c - 1}) := measureReal_mono hsub
+    _ = μ.real {ω | S ω ≤ c} - μ.real {ω | S ω ≤ -c - 1} := measureReal_sdiff hBA hmeasB
+    _ ≤ p₀ + 2 * δ := by linarith [hbe1.1, hbe1.2, hbe2.1, hbe2.2, hcov, hsb]
+
 end JL
