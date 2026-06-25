@@ -297,4 +297,38 @@ theorem central_interval_le [IsProbabilityMeasure μ] {S : Ω → ℝ} (hSae : A
     _ = μ.real {ω | S ω ≤ c} - μ.real {ω | S ω ≤ -c - 1} := hdiff
     _ ≤ p₀ + 2 * δ := by linarith [hbe1.1, hbe1.2, hbe2.1, hbe2.2, hcov, hsb]
 
+/-- The row inner product `⟨rᵢ,w⟩ = ∑ⱼ rᵢⱼwⱼ` is a.e.-measurable (a finite sum of scaled
+a.e.-measurable χ entries). -/
+theorem IsChiMatrix.aemeasurable_rowInner {n m : ℕ} {J : Ω → Matrix (Fin n) (Fin m) ℤ}
+    (hJ : IsChiMatrix J μ) (w : Fin m → ℤ) (i : Fin n) : AEMeasurable (rowInner J w i) μ := by
+  have hfun : rowInner J w i = ∑ j : Fin m, (fun ω => ((J ω i j : ℤ) : ℝ) * (w j : ℝ)) := by
+    funext ω
+    simp only [rowInner, proj, Matrix.mulVec, dotProduct, Finset.sum_apply]
+    push_cast; rfl
+  rw [hfun]
+  exact Finset.aemeasurable_sum _ fun j _ => ((hJ.entry (i, j)).aemeasurable).mul_const _
+
+/-! ### Layer 2 assembly — the per-row bound
+
+Combining the center/wrap split with the central Berry–Esseen transfer and the sub-Gaussian wrap
+tail yields the per-row bad probability `≤ (p₀ + 2δ) + 2e^{−(q−c)²/(2‖w‖₂²)}`. In Case 3, after the
+sub-vector reduction (which forces `‖w‖₂ < q/10` so the wrap term is negligible and `v` lands in the
+small-ball window), this is RoKoko's `0.39 + 2·0.15 + tiny < 1`. -/
+
+/-- **The per-row bound (PROVEN, taking the Berry–Esseen output and the small-ball as inputs).**
+For one row, the bad event `‖⟨rᵢ,w⟩ mod q‖ ≤ c` has probability `≤ (p₀ + 2δ) + 2e^{−(q−c)²/(2‖w‖₂²)}`:
+the central interval contributes `p₀ + 2δ` (`central_interval_le`, the lone Berry–Esseen application)
+and the wrap-around `2e^{−(q−c)²/(2‖w‖₂²)}` (`rowInner_abs_ge_le`, the sub-Gaussian tail from N0). -/
+theorem perRow_bound [IsProbabilityMeasure μ] {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ)
+    (hJ : IsChiMatrix J μ) (w : Fin m → ℤ) (i : Fin n) (q : ℕ) {c δ p₀ : ℝ} {v : NNReal}
+    (hc : 0 ≤ c) (hcq : c ≤ q)
+    (hbe : ∀ x : ℝ,
+      |μ.real {ω | rowInner J w i ω ≤ x} - (gaussianReal 0 v).real (Set.Iic x)| ≤ δ)
+    (hsb : (gaussianReal 0 v).real (Set.Icc (-c - 1) c) ≤ p₀) :
+    μ.real {ω | |(centeredMod q ((proj J w) ω i) : ℝ)| ≤ c}
+      ≤ (p₀ + 2 * δ) + 2 * Real.exp (-((q : ℝ) - c) ^ 2 / (2 * sqNorm w)) := by
+  have hcentral := central_interval_le (hJ.aemeasurable_rowInner w i) hc hbe hsb
+  have hwrap := rowInner_abs_ge_le J hJ w i (ε := (q : ℝ) - c) (by linarith)
+  exact (perRow_split J w q i).trans (add_le_add hcentral hwrap)
+
 end JL
