@@ -35,8 +35,12 @@ the full DAG and [`mathlib-audit.md`](mathlib-audit.md) for Mathlib coverage.
   Appendix A's *case split*: the three geometric regimes (`‖w‖₂<q/10` / `‖w‖∞≥q/60` /
   `‖w‖₂≥q/10 ∧ ‖w‖∞<q/60`) are exhaustive, and since `w` is fixed the bad-event bound dispatches to
   the one applicable case (no union over regimes). Each `CaseᵢHyp` is the same body restricted to its
-  regime; discharge paths: Case 1 → N1 + a no-wrap bound; Case 2 → Chernoff; Case 3 → `BerryEsseenHyp`
-  + the `v`-construction (the irreducible core).
+  regime; discharge paths: Case 1 → *truncated* norm preservation (`projModL2Norm² ≥` a `~13σ`-negligible
+  truncated second-moment sum that concentrates by Bernstein — **not** N1 verbatim, which bounds the
+  un-reduced `‖Jw‖₂`; BS23's "no dangerous wrap" is only the fixed-`κ` counterpart, a fixed `≈2⁻¹³⁰`);
+  Case 2 → Chernoff lower-tail on a `≥½`-per-row count; Case 3 → `BerryEsseenHyp` + the `v`-construction
+  (the irreducible core). Cases 1–2 need **no** new analytic input (Bernstein + Chernoff only), so
+  Berry–Esseen is the lone analytic gap.
 - **Case 3 structural core** ([`JL/Case3.lean`](../Case3.lean)) — Layers 1a+1b of the Berry–Esseen
   case, fully proved with **no analytic input**: `abs_coord_le_of_l2Norm_le` /
   `projMod_short_subset_iInter` (a small ℓ₂ norm forces *every* coordinate small, so
@@ -90,10 +94,11 @@ These are the localized gaps. Anything depending on them carries the hypothesis 
 Do not depend on these as if proved — they are formal targets, not theorems, until a `theorem`
 discharging them appears and this file is updated.
 
-- **N2 cases** ([`JL/RoKoko.lean`](../RoKoko.lean)) — `Case1Hyp` (→ N1 + no-wrap), `Case2Hyp`
-  (Chernoff), `Case3Hyp` (→ `BerryEsseenHyp` + `v`-construction). The N2 *assembly* is now
+- **N2 cases** ([`JL/RoKoko.lean`](../RoKoko.lean)) — `Case1Hyp` (→ *truncated* norm preservation),
+  `Case2Hyp` (Chernoff), `Case3Hyp` (→ `BerryEsseenHyp` + `v`-construction). The N2 *assembly* is now
   **Proved**-conditional (above); these per-case bounds are the remaining targets. Discharging
-  `Case1Hyp` (from N1) is the cheapest next step; `Case3Hyp` is the irreducible core.
+  `Case1Hyp` is the cheapest next step — but note it needs a *truncated*-sum concentration plus the
+  `projModL2Norm² ≥ truncated-sum` bridge, **not** N1 off the shelf; `Case3Hyp` is the irreducible core.
 - **Discharge `JLScalingHyp`** — the remaining substance behind Conjecture 1: build quantitative
   (rate-carrying) versions of N1 (Pillar 1, via Bernstein) and N2 (Pillar 2, via `BerryEsseenHyp` +
   uniform `p(α,β)<1`) to *construct* a working schedule. This is the genuinely conjectural core.

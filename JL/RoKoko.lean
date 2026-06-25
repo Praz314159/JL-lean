@@ -169,9 +169,15 @@ regime) and `w` is fixed (not random), so we dispatch to the one applicable case
 regimes. Each `CaseᵢHyp` is the same `Lemma5_ModqSoundness` body restricted to its regime; the
 "come back and discharge" path for each is recorded below. -/
 
-/-- **Case 1** (`‖w‖₂ < q/10`): no wrap-around is possible, so the mod-`q` norm equals the true norm
-unless some row exceeds `0.95q`; reduces to N1's lower window (`‖Jw‖₂ ≥ √30‖w‖₂ ≥ √30·θ`) plus a
-per-row "no wrap" tail. *Discharge:* `lemma5_norm_preservation` + a centered-mod-is-identity bound. -/
+/-- **Case 1** (`‖w‖₂ < q/10`): *truncated* norm preservation. The reduction only shrinks the
+coordinates it touches, so `projModL2Norm² ≥ Σⱼ ⟨rⱼ,w⟩²·𝟙{|⟨rⱼ,w⟩| < q/2}`; since `‖w‖₂ < q/10`
+makes a wrap a `~13σ` event, the truncation excises a negligible (`< 0.02`) fraction of the second
+moment, and the truncated sum still concentrates at `≥ (αθ)²` by the same Bernstein estimate as N1.
+*Discharge:* a **truncated-sum variant** of `SqNormConcentrationHyp` (NOT `lemma5_norm_preservation`
+verbatim — that bounds the un-reduced `‖Jw‖₂`, not `projModL2Norm`) + the
+`projModL2Norm² ≥ truncated-sum` inequality. *N.B.* BS23's concrete "no dangerous wrap unless a row
+exceeds `0.95q`" is only the **fixed-parameter** counterpart: that union bound is a *fixed*
+probability `≈2⁻¹³⁰`, so it discharges Case 1 for `κ ≳ 2⁻¹²³` but not for every `κ ∈ (0,1)`. -/
 def Case1Hyp (P : Params) (κ : ℝ) (q : ℕ) : Prop :=
   ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ}
     (J : Ω → Matrix (Fin P.n) (Fin m) ℤ), IsChiMatrix J μ →
@@ -180,9 +186,13 @@ def Case1Hyp (P : Params) (κ : ℝ) (q : ℕ) : Prop :=
           l2Norm w < (q : ℝ) / 10 →
             μ.real {ω | projModL2Norm J w q ω ≤ P.α * θ} ≤ κ
 
-/-- **Case 2** (`‖w‖∞ ≥ q/60`): a Chernoff bound on the count of coordinates whose contribution
-exceeds `q/120` (≤ ½ per row, so ≤ 29 of 256 rows stay small with prob `< 2⁻¹²⁸`). *Discharge:* a
-binomial/Chernoff tail (Mathlib sub-Gaussian + the per-row conditioning argument). -/
+/-- **Case 2** (`‖w‖∞ ≥ q/60`): a Chernoff count. The peaked coordinate makes each row's reduced
+value exceed a threshold `s = Θ(q/b)` with prob `≥ ½` independently (the three values for
+`χⱼ⋆ ∈ {-1,0,1}` are spaced `≥ q/60 > 2s` apart, so `≤ 1` lands in `[-s,s]`); a Chernoff lower-tail
+bound gives `≥ n/4` large rows except with prob `e^{-n/16} ≤ κ`, whence
+`projModL2Norm ≥ √(n/4)·s ≥ αθ`. *Discharge:* a Chernoff lower-tail (Mathlib sub-Gaussian + the
+per-row conditioning argument). *N.B.* concretely BS23 counts rows exceeding `q/120` (≤ 29 of 256
+small with prob `< 2⁻¹²⁸`); the per-row-`≥½` + Chernoff mechanism is the same. -/
 def Case2Hyp (P : Params) (κ : ℝ) (q : ℕ) : Prop :=
   ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ}
     (J : Ω → Matrix (Fin P.n) (Fin m) ℤ), IsChiMatrix J μ →

@@ -120,6 +120,10 @@ Concrete (BS23 Lem 4.2): for `w ∈ [±q/2]^d`, `‖w‖ ≥ b`, `b ≤ q/125`:
 - **Case 1** `‖w‖ < q/10`: no wrap-around possible (`√30·b < 0.05q`), so a small `‖Πw mod q‖`
   forces either small `‖Πw‖` (use N1 lower tail) or some row with `|⟨πᵢ,w⟩| > 0.95q` (prob
   `≤ 2⁻¹⁴¹` per row by N1), union bound over 256 rows. **Easy** — reduces to N1.
+  *(Asymptotic `Case1Hyp` caveat: the dangerous-wrap union is a* fixed *probability `≈2⁻¹³⁰`, so it
+  only reaches `κ ≳ 2⁻¹²³`. The all-`κ` discharge is* truncated *norm preservation —
+  `projModL2Norm² ≥ Σⱼ ⟨πⱼ,w⟩²·𝟙{|⟨πⱼ,w⟩| < q/2}`, a `~13σ`-negligible truncation that still
+  concentrates by Bernstein. See the `Case1Hyp` docstring in `RoKoko.lean`.)*
 - **Case 2** `‖w‖∞ ≥ q/60`: pick coord `i` with `|wᵢ| ≥ q/60`. Conditioning on the other
   entries of a row, `|⟨π,w⟩| ≤ q/120` with prob `≤ 1/2`. Since `Σ_{i=0}^{29} C(256,i) < 2¹²⁸`,
   the prob that ≤29 rows of Πw exceed `q/120` is `< 2⁻¹²⁸`; and `√30·b < 29·q/120`. **Medium** —
