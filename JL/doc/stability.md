@@ -105,10 +105,13 @@ discharging them appears and this file is updated.
     `pⁿ = e^{−n log(1/p)} ≤ e^{log κ} = κ`.
   - `grind_hP1` (PROVEN): `2e^{−c(1/2)²n} ≤ κ` — `n ≥ (4/c)·log(2/κ)` ⟹ `e^{−(c/4)n} ≤ e^{log(κ/2)}
     = κ/2`.
-  - `grindSchedule` assembles these + the plumbing into a `FeasibleSchedule`, leaving the **four
-    `Θ`-rate obligations as explicit premises** — the next grind chunk (`Nat.ceil` + `log`/`sqrt`
-    estimates, eventually as `κ → 0⁺`). Then `conjecture1_of_interfaces (…) (grindSchedule …)` would
-    close the conjecture modulo the two tool interfaces + those rate bounds.
+  - `grind_hnΘ` (PROVEN): `n κ = ⌈M·log(2/κ)⌉ = Θ(log(1/κ))` — lower `M·log(1/κ) ≤ n κ`
+    (`Nat.le_ceil` + `log(2/κ) ≥ log(1/κ)`); upper `n κ ≤ (M+1)·log(1/κ)` eventually
+    (`Nat.ceil_lt_add_one` + `log(1/κ) > M·log2+1` once `κ < e^{−(M·log2+1)}`).
+  - `grindSchedule` now assembles `hP1`/`hP2`/`hnΘ` + plumbing into a `FeasibleSchedule`, leaving
+    only the **three `√`-image rate obligations `hαΘ`/`hβΘ`/`hbΘ` as explicit premises** — the next
+    grind chunk (each is `√·` of `hnΘ`). Then `conjecture1_of_interfaces (…) (grindSchedule …)`
+    closes the conjecture modulo the two tool interfaces + those three rate bounds.
 
 ## Out of scope (for now)
 
