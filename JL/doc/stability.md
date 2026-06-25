@@ -86,6 +86,18 @@ discharging them appears and this file is updated.
     with explicit rates) is the sharp residual; discharging it reduces to N1 + Bernstein (Pillar 1)
     and N2 with `BerryEsseenHyp` + the uniform `p(α,β)<1` claim (Pillar 2 / Case 3 — the open nub).
 
+- **Grinding harness** ([`JL/Research/Harness.lean`](../Research/Harness.lean)) — the structure for
+  attacking the conjecture with the deep machinery abstracted away.
+  - **Explicit tool interfaces**: `ConcentrationInterface c` (`≤ 2e^{−cε²n}`, Pillar 1, ← Bernstein/χ²)
+    and `AntiConcentrationInterface p q` (`≤ pⁿ` with `p<1`, Pillar 2, ← Berry–Esseen).
+  - **`FeasibleSchedule c p q`** — a schedule `κ↦(n,α,β,b)` plus the *concrete inequalities*
+    (`hP1`,`hP2` make both interface failures `≤ κ`; `hnΘ`,`hαΘ`,`hβΘ`,`hbΘ` give the `Θ` rates).
+    **Constructing one is the grind** — a finite list of `exp`/`log`/`pow`/`Θ` inequalities, no
+    probability.
+  - **`conjecture1_of_interfaces` (PROVEN)**: `ConcentrationInterface c → AntiConcentrationInterface
+    p q → FeasibleSchedule c p q → Conjecture1_Statement q`. Pure assembly. So the conjecture is now
+    `(two standard tools, deferred) + (one concrete inequality bundle, grindable)`.
+
 ## Out of scope (for now)
 
 - A `JLSource` typeclass unifying χ / Bin₂ / Gaussian. Deliberately deferred — current code uses
