@@ -194,4 +194,39 @@ theorem rowInner_abs_ge_le [IsProbabilityMeasure μ] {n m : ℕ}
   have h := measureReal_abs_ge_le (n0_rowSubgaussian μ J hJ w i) hε
   rwa [Real.coe_toNNReal _ (sqNorm_nonneg w)] at h
 
+/-! ### Layer 2c — the center/wrap dichotomy (pure `Int.bmod` geometry)
+
+A small balanced residue `x mod q` forces *either* no wrap (`|x| ≤ c`, handled by Berry–Esseen on the
+single central interval) *or* a full wrap (`|x| ≥ q − c`, handled by the sub-Gaussian tail). This is
+the integer fact behind RoKoko's `0.39 + 2·0.15`: only one central interval needs Berry–Esseen. -/
+
+/-- **Center/wrap dichotomy.** If the balanced residue of `x` mod `q` is at most `c` in absolute
+value, then `x` itself is either within `c` of `0` (no wrap) or at least `q − c` from `0` (wrapped). -/
+theorem abs_le_or_ge_of_centeredMod_le {q : ℕ} {x : ℤ} {c : ℝ}
+    (h : |(centeredMod q x : ℝ)| ≤ c) : |(x : ℝ)| ≤ c ∨ (q : ℝ) - c ≤ |(x : ℝ)| := by
+  simp only [centeredMod] at h
+  have hz : x = Int.bmod x q + (q : ℤ) * Int.bdiv x q := by
+    rw [Int.bmod_eq_self_sub_mul_bdiv]; ring
+  have hdecomp : (x : ℝ) = (Int.bmod x q : ℝ) + (q : ℝ) * (Int.bdiv x q : ℝ) := by
+    exact_mod_cast hz
+  rcases eq_or_ne (Int.bdiv x q) 0 with hk0 | hk0
+  · left
+    have hx : (x : ℝ) = (Int.bmod x q : ℝ) := by rw [hdecomp, hk0]; push_cast; ring
+    rw [hx]; exact h
+  · right
+    have hk1 : (1 : ℝ) ≤ |(Int.bdiv x q : ℝ)| := by
+      have h1 : (1 : ℤ) ≤ |Int.bdiv x q| := Int.one_le_abs hk0
+      calc (1 : ℝ) ≤ ((|Int.bdiv x q| : ℤ) : ℝ) := by exact_mod_cast h1
+        _ = |(Int.bdiv x q : ℝ)| := by rw [Int.cast_abs]
+    have hq : (0 : ℝ) ≤ (q : ℝ) := by positivity
+    have hrev : |(q : ℝ) * (Int.bdiv x q : ℝ)| - |(Int.bmod x q : ℝ)| ≤ |(x : ℝ)| := by
+      have ht := abs_sub_abs_le_abs_sub ((q : ℝ) * (Int.bdiv x q : ℝ)) (-(Int.bmod x q : ℝ))
+      rw [abs_neg] at ht
+      have e : (q : ℝ) * (Int.bdiv x q : ℝ) - -(Int.bmod x q : ℝ) = (x : ℝ) := by
+        rw [hdecomp]; ring
+      rwa [e] at ht
+    have habs : |(q : ℝ) * (Int.bdiv x q : ℝ)| = (q : ℝ) * |(Int.bdiv x q : ℝ)| := by
+      rw [abs_mul, abs_of_nonneg hq]
+    nlinarith [hk1, hq, hrev, habs, h, mul_le_mul_of_nonneg_left hk1 hq]
+
 end JL
