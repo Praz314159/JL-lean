@@ -358,4 +358,14 @@ theorem case3_budget_closes {p₀ δ wrap : ℝ}
     (hp0 : p₀ ≤ 0.40) (hδ : δ ≤ 0.146) (hwrap : wrap ≤ 0.001) :
     (p₀ + 2 * δ) + wrap < 1 := by linarith
 
+/-- **The small-ball headroom (the margin, quantified).** The budget still closes for *any* small-ball
+constant `p₀ ≤ 0.70`, not just the realised `≈ 0.40`. Since `p₀ = 2Φ(c/σ)−1` increases with the
+shortness ratio `c/σ ≈ (α/b)·11√2`, this headroom is spendable: it lets the soundness ratio `α/b`
+roughly double (`1/30 → ~1/15`) while keeping the per-row bad probability `< 1`. The margin is thus a
+parameter **trade-off frontier** (soundness ratio vs. row count `n_rp = log(1/κ)/log(1/p)`), not free
+improvement. -/
+theorem case3_budget_frontier {p₀ δ wrap : ℝ}
+    (hp0 : p₀ ≤ 0.70) (hδ : δ ≤ 0.146) (hwrap : wrap ≤ 0.001) :
+    (p₀ + 2 * δ) + wrap < 1 := by linarith
+
 end JL
