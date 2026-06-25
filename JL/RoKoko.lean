@@ -20,6 +20,7 @@ which Mathlib API closes each is recorded in `JL/doc/paper-to-lean-map.md`.
 -/
 
 open MeasureTheory ProbabilityTheory Matrix
+open scoped NNReal
 
 namespace JL
 
@@ -45,6 +46,57 @@ def N0_RowSubgaussian : Prop :=
   ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {n m : ℕ}
     (J : Ω → Matrix (Fin n) (Fin m) ℤ), IsChiMatrix J μ → ∀ (w : Fin m → ℤ) (i : Fin n),
       HasSubgaussianMGF (rowInner J w i) (sqNorm w).toNNReal μ
+
+/-- **N0 proved** (PROVEN — per-row sub-Gaussianity, the leaf). The row inner product
+`⟨rᵢ,w⟩ = ∑ⱼ rᵢⱼ·wⱼ` is a sum of independent zero-mean terms, each bounded in `[-|wⱼ|, |wⱼ|]`, hence
+sub-Gaussian with parameter `wⱼ²` (Hoeffding's lemma); summing over the independent coordinates
+gives parameter `∑ⱼ wⱼ² = ‖w‖₂²`. -/
+theorem n0_rowSubgaussian : N0_RowSubgaussian := by
+  intro Ω _ μ _ n m J hJ w i
+  classical
+  -- (1) Independence of the row-`i` entries, then of the witness-scaled family.
+  have hg : Function.Injective (fun j : Fin m => ((i, j) : Fin n × Fin m)) :=
+    fun a b h => by simpa using h
+  have hentryIndep : iIndepFun (fun j : Fin m => fun ω => ((J ω i j : ℤ) : ℝ)) μ := by
+    simpa using hJ.indep.precomp hg
+  have hXindep : iIndepFun (fun j : Fin m => fun ω => ((J ω i j : ℤ) : ℝ) * (w j : ℝ)) μ := by
+    have h := hentryIndep.comp (fun j (x : ℝ) => x * (w j : ℝ))
+      (fun j => measurable_id.mul_const _)
+    simpa [Function.comp_def] using h
+  -- (2) Each scaled entry is sub-Gaussian (bounded in `[-|wⱼ|,|wⱼ|]`, mean zero — Hoeffding).
+  have hsubG : ∀ j ∈ (Finset.univ : Finset (Fin m)),
+      HasSubgaussianMGF (fun ω => ((J ω i j : ℤ) : ℝ) * (w j : ℝ))
+        ((‖|(w j : ℝ)| - -|(w j : ℝ)|‖₊ / 2) ^ 2) μ := by
+    intro j _
+    have hentry := hJ.entry (i, j)
+    have hmz : (∫ ω, ((J ω i j : ℤ) : ℝ) ∂μ) = 0 := hentry.mean_zero
+    refine hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero (a := -|(w j : ℝ)|) (b := |(w j : ℝ)|)
+      (hentry.aemeasurable.mul_const _) ?_ ?_
+    · filter_upwards [hentry.mem] with ω he
+      have hc1 : |((J ω i j : ℤ) : ℝ)| ≤ 1 := by
+        rcases he with h | h | h <;> rw [h] <;> norm_num
+      have hbound : |((J ω i j : ℤ) : ℝ) * (w j : ℝ)| ≤ |(w j : ℝ)| := by
+        rw [abs_mul]; exact mul_le_of_le_one_left (abs_nonneg _) hc1
+      exact Set.mem_Icc.mpr (abs_le.mp hbound)
+    · rw [integral_mul_const, hmz, zero_mul]
+  -- (3) Sum over the row.
+  have hsum := HasSubgaussianMGF.sum_of_iIndepFun hXindep hsubG
+  -- (4) Reconcile the function and the sub-Gaussian parameter.
+  have hfun : rowInner J w i = fun ω => ∑ j : Fin m, ((J ω i j : ℤ) : ℝ) * (w j : ℝ) := by
+    funext ω
+    simp only [rowInner, proj, Matrix.mulVec, dotProduct]
+    push_cast
+    rfl
+  have hc : (∑ j : Fin m, (‖|(w j : ℝ)| - -|(w j : ℝ)|‖₊ / 2) ^ 2) = (sqNorm w).toNNReal := by
+    apply NNReal.coe_injective
+    rw [NNReal.coe_sum, Real.coe_toNNReal _ (sqNorm_nonneg w), sqNorm]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    push_cast
+    rw [Real.norm_eq_abs, show |(w j : ℝ)| - -|(w j : ℝ)| = 2 * |(w j : ℝ)| by ring,
+      abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * |(w j : ℝ)|),
+      mul_div_cancel_left₀ _ (by norm_num : (2 : ℝ) ≠ 0), sq_abs]
+  rw [hfun, ← hc]
+  exact hsum
 
 /-- **N1 (Lemma 5, inequality I — the easy half).** For any `κ ∈ (0,1)` and modulus `q` there are
 parameters `(n, α, β)` so that for every width `m`, every χ-matrix `J` of height `n`, and every

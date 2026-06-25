@@ -21,6 +21,10 @@ the full DAG and [`mathlib-audit.md`](mathlib-audit.md) for Mathlib coverage.
   per-block norm-window hypothesis, the probability that *some* `(column, block)` pair violates the
   window is `≤ κ·r·blocks`. (The Pythagorean per-column concatenation, combining blocks into one
   column window, is still deferred to the full matrix version.)
+- **N0 `n0_rowSubgaussian`** ([`JL/RoKoko.lean`](../RoKoko.lean)) — each row inner product `⟨rᵢ,w⟩` is
+  sub-Gaussian with parameter `‖w‖₂²`: reindex the entry independence to row `i`, scale by the
+  witness coordinates (`iIndepFun.precomp`/`.comp`), apply Hoeffding's lemma per coordinate
+  (`hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero`), and sum (`HasSubgaussianMGF.sum_of_iIndepFun`).
 
 ## Assumed analytic inputs (named hypotheses — NOT proved here)
 
@@ -38,9 +42,9 @@ These are the localized gaps. Anything depending on them carries the hypothesis 
 Do not depend on these as if proved — they are formal targets, not theorems, until a `theorem`
 discharging them appears and this file is updated.
 
-- **N0–N2** ([`JL/RoKoko.lean`](../RoKoko.lean)) — Lemma 5 (I) norm preservation, Lemma 5 (II) mod-q
-  soundness, and `N0_RowSubgaussian`. N0 (per-row sub-Gaussianity via Hoeffding's lemma) is the next
-  fully-rigorous target. (N3 is now **Proved**, above.)
+- **N1–N2** ([`JL/RoKoko.lean`](../RoKoko.lean)) — Lemma 5 (I) norm preservation, Lemma 5 (II) mod-q
+  soundness. N1 (the two-sided window via sub-exponential Bernstein / χ² tails) is the next target;
+  N2 Case 3 needs `BerryEsseenHyp`. (N0 and N3 are now **Proved**, above.)
 - **L7, L9, L9a, L10** ([`JL/LNP.lean`](../LNP.lean)) — the LNP22 Berry–Esseen-free route. L7 (ℓ∞ ARP)
   and L9a (symmetrization) are fully rigorous; L10/L9 bottom out at `ChiSquaredTailHyp`, not
   Berry–Esseen.
