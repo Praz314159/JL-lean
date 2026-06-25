@@ -21,6 +21,17 @@ intent is to discharge it by building the sub-exponential layer, not to assume i
 
 `JL.lemma5_norm_preservation` (Pillar 1, RoKoko Lemma 5 (I)) is proved from this hypothesis — the
 ℓ₂-norm window is the `√·` image of the squared window (via `JL.l2Norm_sq`).
+
+**Rigorous, not heuristic (Ach01).** RoKoko Appendix A's asymptotic sketch "treats the discrete χ
+over `{-1,0,1}` as if it were a Gaussian." For *this* (concentration) half that analogy is a
+theorem, not a heuristic: Achlioptas [Ach01, Lemma 5.1/5.2] shows the moment-generating function /
+even moments of `⟨r,a⟩` for the discrete distribution are *dominated* by the Gaussian's, so discrete
+χ obtains the **same** Bernstein/χ²-type two-sided tail. Hence `SqNormConcentrationHyp` is genuinely
+derivable (two routes: the Gaussian χ² tail, or Ach01's moment domination for the exact discrete χ),
+and the `Θ(√log(1/κ))` window scaling is rigorous. The Gaussian heuristic *only* genuinely enters the
+**anti-concentration** half — the mod-`q` small-ball of a single `⟨r,w⟩` (Case 3), where Ach01 gives
+nothing and we instead carry `BerryEsseenHyp` (quantitative χ→Gaussian transfer) + a Gaussian
+small-ball. That is the lone conjectural nub; this concentration input is not part of it.
 -/
 
 open MeasureTheory ProbabilityTheory Matrix
