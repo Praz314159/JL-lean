@@ -257,7 +257,7 @@ The integer/atom boundary is sidestepped by using the strictly-lower cut `{S ≤
 /-- **Central-interval Berry–Esseen transfer.** If the CDF of `S` is `δ`-close to that of `N(0,v)`
 (Berry–Esseen) and the Gaussian puts mass `≤ p₀` on `[−c−1, c]` (small-ball), then
 `Pr[|S| ≤ c] ≤ p₀ + 2δ`. This is the lone Berry–Esseen application of Case 3. -/
-theorem central_interval_le [IsProbabilityMeasure μ] {S : Ω → ℝ} (hSmeas : Measurable S)
+theorem central_interval_le [IsProbabilityMeasure μ] {S : Ω → ℝ} (hSae : AEMeasurable S μ)
     {v : NNReal} {c δ p₀ : ℝ} (hc : 0 ≤ c)
     (hbe : ∀ x : ℝ, |μ.real {ω | S ω ≤ x} - (gaussianReal 0 v).real (Set.Iic x)| ≤ δ)
     (hsb : (gaussianReal 0 v).real (Set.Icc (-c - 1) c) ≤ p₀) :
@@ -271,7 +271,15 @@ theorem central_interval_le [IsProbabilityMeasure μ] {S : Ω → ℝ} (hSmeas :
     linarith [(abs_le.mp hω).1]
   have hBA : {ω | S ω ≤ -c - 1} ⊆ {ω | S ω ≤ c} := by
     intro ω hω; simp only [Set.mem_setOf_eq] at *; linarith [hc]
-  have hmeasB : MeasurableSet {ω | S ω ≤ -c - 1} := hSmeas measurableSet_Iic
+  -- `{S ≤ -c-1}` is null-measurable (preimage of `Iic` under the a.e.-measurable `S`), enough for
+  -- the set-difference measure identity below.
+  have hnull : NullMeasurableSet {ω | S ω ≤ -c - 1} μ :=
+    hSae.nullMeasurableSet_preimage measurableSet_Iic
+  have hdiff : μ.real ({ω | S ω ≤ c} \ {ω | S ω ≤ -c - 1})
+      = μ.real {ω | S ω ≤ c} - μ.real {ω | S ω ≤ -c - 1} := by
+    have key := measureReal_inter_add_sdiff₀ (s := {ω | S ω ≤ c}) hnull
+    rw [Set.inter_eq_right.mpr hBA] at key
+    linarith [key]
   have hcov : (gaussianReal 0 v).real (Set.Iic c)
       ≤ (gaussianReal 0 v).real (Set.Iic (-c - 1))
         + (gaussianReal 0 v).real (Set.Icc (-c - 1) c) := by
@@ -286,7 +294,7 @@ theorem central_interval_le [IsProbabilityMeasure μ] {S : Ω → ℝ} (hSmeas :
   have hbe2 := abs_le.mp (hbe (-c - 1))
   calc μ.real {ω | |S ω| ≤ c}
       ≤ μ.real ({ω | S ω ≤ c} \ {ω | S ω ≤ -c - 1}) := measureReal_mono hsub
-    _ = μ.real {ω | S ω ≤ c} - μ.real {ω | S ω ≤ -c - 1} := measureReal_sdiff hBA hmeasB
+    _ = μ.real {ω | S ω ≤ c} - μ.real {ω | S ω ≤ -c - 1} := hdiff
     _ ≤ p₀ + 2 * δ := by linarith [hbe1.1, hbe1.2, hbe2.1, hbe2.2, hcov, hsb]
 
 end JL
