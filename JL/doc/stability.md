@@ -37,6 +37,15 @@ the full DAG and [`mathlib-audit.md`](mathlib-audit.md) for Mathlib coverage.
   the one applicable case (no union over regimes). Each `CaseᵢHyp` is the same body restricted to its
   regime; discharge paths: Case 1 → N1 + a no-wrap bound; Case 2 → Chernoff; Case 3 → `BerryEsseenHyp`
   + the `v`-construction (the irreducible core).
+- **Case 3 structural core** ([`JL/Case3.lean`](../Case3.lean)) — Layers 1a+1b of the Berry–Esseen
+  case, fully proved with **no analytic input**: `abs_coord_le_of_l2Norm_le` /
+  `projMod_short_subset_iInter` (a small ℓ₂ norm forces *every* coordinate small, so
+  `{‖Jw mod q‖₂ ≤ c} ⊆ ⋂ᵢ {|centeredMod q (Jw)ᵢ| ≤ c}`); `iInter_row_prob_le` /
+  `projMod_short_prob_le` (independent rows ⇒ the all-rows-short event has probability `≤ pⁿ`, the
+  exact shape of `AntiConcentrationInterface`). The per-row bound `p` (Layers 2–3, Berry–Esseen) and
+  row independence are the only remaining inputs; row independence (`hRowIndep : iIndepFun …`) is
+  threaded as an explicit premise — it is **provable structural infrastructure** (block-independence
+  of a product-indexed `iIndepFun` family, absent from Mathlib), *not* an analytic gap.
 
 ## Assumed analytic inputs (named hypotheses — NOT proved here)
 

@@ -12,4 +12,5 @@ import JL.Analytic.BerryEsseen
 import JL.Analytic.ChiSquared
 import JL.Analytic.SubExponential
 import JL.RoKoko
+import JL.Case3
 import JL.LNP
