@@ -98,6 +98,18 @@ discharging them appears and this file is updated.
     p q → FeasibleSchedule c p q → Conjecture1_Statement q`. Pure assembly. So the conjecture is now
     `(two standard tools, deferred) + (one concrete inequality bundle, grindable)`.
 
+- **First grinding pass** ([`JL/Research/GrindPass.lean`](../Research/GrindPass.lean)) — an explicit
+  candidate schedule `n κ = ⌈M·log(2/κ)⌉` (`M = max(4/c, 1/log(1/p))`), `α=√(n/4)`, `β=√(3n/4)`,
+  `b=√n`, with the **two failure bounds proved**:
+  - `grind_hP2` (PROVEN): `pⁿ ≤ κ` — `n ≥ (1/log(1/p))·log(2/κ)` ⟹ `n·log(1/p) ≥ log(1/κ)` ⟹
+    `pⁿ = e^{−n log(1/p)} ≤ e^{log κ} = κ`.
+  - `grind_hP1` (PROVEN): `2e^{−c(1/2)²n} ≤ κ` — `n ≥ (4/c)·log(2/κ)` ⟹ `e^{−(c/4)n} ≤ e^{log(κ/2)}
+    = κ/2`.
+  - `grindSchedule` assembles these + the plumbing into a `FeasibleSchedule`, leaving the **four
+    `Θ`-rate obligations as explicit premises** — the next grind chunk (`Nat.ceil` + `log`/`sqrt`
+    estimates, eventually as `κ → 0⁺`). Then `conjecture1_of_interfaces (…) (grindSchedule …)` would
+    close the conjecture modulo the two tool interfaces + those rate bounds.
+
 ## Out of scope (for now)
 
 - A `JLSource` typeclass unifying χ / Bin₂ / Gaussian. Deliberately deferred — current code uses

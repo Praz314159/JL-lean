@@ -19,7 +19,7 @@ lean_lib «JL» where
 -- but excluded from the public umbrella `JL.lean` so downstream `import JL` stays lean.
 @[default_target]
 lean_lib «JL.Research» where
-  roots := #[`JL.Research.Conjecture, `JL.Research.Harness]
+  roots := #[`JL.Research.Conjecture, `JL.Research.Harness, `JL.Research.GrindPass]
 
 -- Concrete-instance examples (`JL/Examples/`). Same reasoning as Research above.
 @[default_target]
