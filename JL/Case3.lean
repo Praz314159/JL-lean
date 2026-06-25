@@ -32,7 +32,9 @@ open scoped NNReal
 
 namespace JL
 
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+-- Case 3's downstream targets (`Case3Hyp`, `AntiConcentrationInterface`) and the N0 leaf are all
+-- stated at `Type` (Type 0); we match that here so the pieces compose without universe friction.
+variable {Ω : Type} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
 /-! ### Layer 1a — a small ℓ₂ norm forces every coordinate small -/
 
@@ -156,5 +158,40 @@ theorem IsChiEntry.scaled_thirdMoment {X : Ω → ℝ} (h : IsChiEntry X μ) (c 
     ∫ ω, |X ω * c| ^ 3 ∂μ = (1 / 2) * |c| ^ 3 := by
   simp only [abs_mul, mul_pow]
   rw [integral_mul_const, h.thirdMoment]
+
+/-! ### Layer 2b — the wrap-around tail (from N0, sub-Gaussian)
+
+The mod-`q` wrap-around (all lattice intervals except the one nearest the mean) lies in the far tail
+`{|⟨rᵢ,w⟩| ≥ q/2 − c}`. Berry–Esseen is the *wrong* tool there (its uniform error `≈0.15` dwarfs the
+actual mass); the right tool is the genuine sub-Gaussian tail of the row inner product, i.e. N0. This
+is why N0 is the leaf of the DAG — it controls the wrap, so only ONE Berry–Esseen application (the
+central interval) is needed and the per-row bound stays `0.39 + 2·0.15 < 1`. -/
+
+/-- Two-sided sub-Gaussian (Chernoff) tail: `Pr[|X| ≥ ε] ≤ 2 e^{−ε²/(2c)}`. -/
+theorem measureReal_abs_ge_le [IsFiniteMeasure μ] {X : Ω → ℝ} {c : ℝ≥0}
+    (h : HasSubgaussianMGF X c μ) {ε : ℝ} (hε : 0 ≤ ε) :
+    μ.real {ω | ε ≤ |X ω|} ≤ 2 * Real.exp (-ε ^ 2 / (2 * c)) := by
+  have h1 := h.measure_ge_le hε
+  have h2 := h.neg.measure_ge_le hε
+  have hsub : {ω | ε ≤ |X ω|} ⊆ {ω | ε ≤ X ω} ∪ {ω | ε ≤ -X ω} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq] at hω
+    rcases le_abs.mp hω with h' | h'
+    · exact Or.inl h'
+    · exact Or.inr h'
+  calc μ.real {ω | ε ≤ |X ω|}
+      ≤ μ.real ({ω | ε ≤ X ω} ∪ {ω | ε ≤ -X ω}) := measureReal_mono hsub
+    _ ≤ μ.real {ω | ε ≤ X ω} + μ.real {ω | ε ≤ -X ω} := measureReal_union_le _ _
+    _ ≤ Real.exp (-ε ^ 2 / (2 * c)) + Real.exp (-ε ^ 2 / (2 * c)) := add_le_add h1 h2
+    _ = 2 * Real.exp (-ε ^ 2 / (2 * c)) := by ring
+
+/-- **Wrap-around tail of a row inner product** (specialisation of `measureReal_abs_ge_le` via N0).
+The probability that `⟨rᵢ,w⟩` is at least `ε` in absolute value is `≤ 2 e^{−ε²/(2‖w‖₂²)}`. -/
+theorem rowInner_abs_ge_le [IsProbabilityMeasure μ] {n m : ℕ}
+    (J : Ω → Matrix (Fin n) (Fin m) ℤ) (hJ : IsChiMatrix J μ) (w : Fin m → ℤ) (i : Fin n)
+    {ε : ℝ} (hε : 0 ≤ ε) :
+    μ.real {ω | ε ≤ |rowInner J w i ω|} ≤ 2 * Real.exp (-ε ^ 2 / (2 * sqNorm w)) := by
+  have h := measureReal_abs_ge_le (n0_rowSubgaussian μ J hJ w i) hε
+  rwa [Real.coe_toNNReal _ (sqNorm_nonneg w)] at h
 
 end JL
