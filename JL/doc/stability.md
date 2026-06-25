@@ -64,8 +64,9 @@ discharging them appears and this file is updated.
   (Chernoff), `Case3Hyp` (→ `BerryEsseenHyp` + `v`-construction). The N2 *assembly* is now
   **Proved**-conditional (above); these per-case bounds are the remaining targets. Discharging
   `Case1Hyp` (from N1) is the cheapest next step; `Case3Hyp` is the irreducible core.
-- **Conjecture 1 assembly** — once N1 + N2 + Lemma 6 are in place, `conjecture1_of_berryEsseen` is the
-  scaling/assembly target (`JL/Research/`).
+- **Discharge `JLScalingHyp`** — the remaining substance behind Conjecture 1: build quantitative
+  (rate-carrying) versions of N1 (Pillar 1, via Bernstein) and N2 (Pillar 2, via `BerryEsseenHyp` +
+  uniform `p(α,β)<1`) to *construct* a working schedule. This is the genuinely conjectural core.
 - **L7, L9, L9a, L10** ([`JL/LNP.lean`](../LNP.lean)) — the LNP22 Berry–Esseen-free route. L7 (ℓ∞ ARP)
   and L9a (symmetrization) are fully rigorous; L10/L9 bottom out at `ChiSquaredTailHyp`, not
   Berry–Esseen.
@@ -73,8 +74,17 @@ discharging them appears and this file is updated.
 ## Research / conjectured
 
 - **Conjecture 1** ([`JL/Research/Conjecture.lean`](../Research/Conjecture.lean)) — asymptotic
-  `Θ(√log(1/κ))` scaling, tagged `JLRegime.conjectured`. Reduces to `BerryEsseenHyp` plus mechanical
-  scaling. Stability: **research / conjectured**. Built in CI, not in `import JL`.
+  `Θ(√log(1/κ))` scaling, tagged `JLRegime.conjectured`. Stability: **research / conjectured**.
+  Built in CI, not in `import JL`.
+  - **`Conjecture1_Statement` is now non-vacuous**: it asserts a parameter *schedule* that *achieves*
+    the JL guarantee (`AchievesJL` = Lemma 5 (I)+(II) bodies) at each `κ`, AND has the `Θ`
+    asymptotics. (The original skeleton form — "functions with these growth rates exist" — was
+    trivially true; the content is coupling the rates to the guarantee.)
+  - **`conjecture1_of_jlScaling` (PROVEN reduction)**: `JLScalingHyp q → Conjecture1_Statement q`.
+    Proved content = the Landau packaging (pointwise `∀κ∈(0,1)` rate bounds ↦ `Θ` as `κ→0⁺`, via
+    `eventually_of_mem` on `Ioo 0 1 ∈ 𝓝[>] 0`). `JLScalingHyp` (a schedule achieving the guarantee
+    with explicit rates) is the sharp residual; discharging it reduces to N1 + Bernstein (Pillar 1)
+    and N2 with `BerryEsseenHyp` + the uniform `p(α,β)<1` claim (Pillar 2 / Case 3 — the open nub).
 
 ## Out of scope (for now)
 
