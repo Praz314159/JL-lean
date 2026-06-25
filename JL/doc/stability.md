@@ -25,6 +25,11 @@ the full DAG and [`mathlib-audit.md`](mathlib-audit.md) for Mathlib coverage.
   sub-Gaussian with parameter `‖w‖₂²`: reindex the entry independence to row `i`, scale by the
   witness coordinates (`iIndepFun.precomp`/`.comp`), apply Hoeffding's lemma per coordinate
   (`hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero`), and sum (`HasSubgaussianMGF.sum_of_iIndepFun`).
+- **N1 `lemma5_norm_preservation`** ([`JL/RoKoko.lean`](../RoKoko.lean)) — Pillar 1, RoKoko Lemma 5 (I).
+  Proved **conditional on `SqNormConcentrationHyp`** (the GHL21 concentration, deferred derivable
+  input): the norm window `[√a, √b]` is the `√·` image of the squared window `[a, b]`, via
+  `normRatio_eq_sqrt` + `l2Norm_sq`. The `√·`/window/division bookkeeping is fully proved; only the
+  analytic concentration is assumed. Also: bridge lemmas `sqNorm_pos`, `normRatio_eq_sqrt`.
 
 ## Assumed analytic inputs (named hypotheses — NOT proved here)
 
@@ -36,15 +41,20 @@ These are the localized gaps. Anything depending on them carries the hypothesis 
 - **`JL.Analytic.ChiSquaredTailHyp`** ([`JL/Analytic/ChiSquared.lean`](../Analytic/ChiSquared.lean)) —
   χ²_n tail bounds. **Derivable** from Mathlib's `Gamma` distribution + MGF/Chernoff (χ² = Gamma(n/2,2));
   assumed for now, expected to be discharged in-tree. Stability: **assumed (derivable)**.
+- **`JL.Analytic.SqNormConcentrationHyp`** ([`JL/Analytic/SubExponential.lean`](../Analytic/SubExponential.lean)) —
+  the **GHL21 concentration bound** for `‖Jw‖₂²/‖w‖₂²` (squared-ratio form), i.e. sub-exponential
+  Bernstein applied to `∑ⱼ⟨rⱼ,w⟩²`. **Derivable** but Mathlib lacks the sub-exponential layer.
+  Stability: **assumed (derivable)**. *Discharge targets (come back to these):* (a) the χ²/Gaussian
+  route via `ChiSquaredTailHyp` (= GHL21's own argument, made rigorous; Mathlib-`Gamma`-derivable);
+  (b) the discrete sub-exponential Bernstein layer (Achlioptas-rigorous; build from scratch).
 
 ## Target statements (to be proved; currently `…_Statement : Prop` defs)
 
 Do not depend on these as if proved — they are formal targets, not theorems, until a `theorem`
 discharging them appears and this file is updated.
 
-- **N1–N2** ([`JL/RoKoko.lean`](../RoKoko.lean)) — Lemma 5 (I) norm preservation, Lemma 5 (II) mod-q
-  soundness. N1 (the two-sided window via sub-exponential Bernstein / χ² tails) is the next target;
-  N2 Case 3 needs `BerryEsseenHyp`. (N0 and N3 are now **Proved**, above.)
+- **N2** ([`JL/RoKoko.lean`](../RoKoko.lean)) — Lemma 5 (II) mod-q soundness. The next target; Case 3
+  needs `BerryEsseenHyp`. (N0, N1, N3 are now **Proved**/proved-conditional, above.)
 - **L7, L9, L9a, L10** ([`JL/LNP.lean`](../LNP.lean)) — the LNP22 Berry–Esseen-free route. L7 (ℓ∞ ARP)
   and L9a (symmetrization) are fully rigorous; L10/L9 bottom out at `ChiSquaredTailHyp`, not
   Berry–Esseen.

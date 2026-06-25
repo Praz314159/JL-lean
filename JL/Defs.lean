@@ -81,6 +81,13 @@ theorem l2Norm_nonneg {k : ℕ} (v : Fin k → ℤ) : 0 ≤ l2Norm v := Real.sqr
 theorem l2Norm_sq {k : ℕ} (v : Fin k → ℤ) : l2Norm v ^ 2 = sqNorm v :=
   Real.sq_sqrt (sqNorm_nonneg v)
 
+/-- A nonzero integer vector has strictly positive squared norm. -/
+theorem sqNorm_pos {k : ℕ} {v : Fin k → ℤ} (hv : v ≠ 0) : 0 < sqNorm v := by
+  obtain ⟨j, hj⟩ := Function.ne_iff.mp hv
+  refine Finset.sum_pos' (fun i _ => sq_nonneg _) ⟨j, Finset.mem_univ j, ?_⟩
+  have : ((v j : ℝ)) ≠ 0 := by exact_mod_cast hj
+  positivity
+
 /-- The projected vector `Jw : Ω → (Fin n → ℤ)`, i.e. the random variable `ω ↦ J ω *ᵥ w`. -/
 def proj {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ) : Ω → (Fin n → ℤ) :=
   fun ω => (J ω) *ᵥ w
@@ -99,6 +106,13 @@ noncomputable def projModL2Norm {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) �
 noncomputable def normRatio {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ) :
     Ω → ℝ :=
   fun ω => l2Norm ((proj J w) ω) / l2Norm w
+
+/-- The norm ratio is the square root of the squared-norm ratio: `‖Jw‖₂/‖w‖₂ = √(‖Jw‖₂²/‖w‖₂²)`.
+This is the bridge that turns the (squared) concentration of `‖Jw‖₂²` into the norm-form Lemma 5 (I). -/
+theorem normRatio_eq_sqrt {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ) (ω : Ω) :
+    normRatio J w ω = Real.sqrt (sqNorm (proj J w ω) / sqNorm w) := by
+  simp only [normRatio, l2Norm]
+  exact (Real.sqrt_div (sqNorm_nonneg _) _).symm
 
 /-- The `i`-th row inner product `⟨rᵢ, w⟩ = (Jw)ᵢ` as a real-valued random variable. -/
 def rowInner {n m : ℕ} (J : Ω → Matrix (Fin n) (Fin m) ℤ) (w : Fin m → ℤ) (i : Fin n) : Ω → ℝ :=

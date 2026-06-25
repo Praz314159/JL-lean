@@ -10,5 +10,6 @@ import JL.Defs
 import JL.Regime
 import JL.Analytic.BerryEsseen
 import JL.Analytic.ChiSquared
+import JL.Analytic.SubExponential
 import JL.RoKoko
 import JL.LNP

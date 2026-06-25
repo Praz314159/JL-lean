@@ -3,6 +3,7 @@ Copyright (c) 2026. Released under Apache 2.0 license.
 JL-lean: formal verification of the lattice Johnson–Lindenstrauss projection lemmas.
 -/
 import JL.Defs
+import JL.Analytic.SubExponential
 
 /-!
 # The RoKoko / BS23 route — target statements (nodes N0–N3)
@@ -111,6 +112,36 @@ def Lemma5_NormPreservation (κ : ℝ) : Prop :=
     ∀ {Ω : Type} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] {m : ℕ}
       (J : Ω → Matrix (Fin P.n) (Fin m) ℤ), IsChiMatrix J μ → ∀ w : Fin m → ℤ, w ≠ 0 →
         μ.real {ω | normRatio J w ω ∉ Set.Icc P.α P.β} ≤ κ
+
+/-- **N1 proved from the (derivable) concentration hypothesis** — Pillar 1, RoKoko Lemma 5 (I).
+Given `JL.Analytic.SqNormConcentrationHyp` (the GHL21 concentration of `‖Jw‖₂²`, in squared-ratio
+form), the norm-ratio window is its `√·` image: the squared window `[a, b]` becomes the norm window
+`[√a, √b]`, and the events coincide because `‖Jw‖₂/‖w‖₂ = √(‖Jw‖₂²/‖w‖₂²)` (`normRatio_eq_sqrt`).
+The analytic content (sub-exponential Bernstein / χ² tails) is the deferred derivable input. -/
+theorem lemma5_norm_preservation (h : Analytic.SqNormConcentrationHyp) {κ : ℝ}
+    (hκ0 : 0 < κ) (hκ1 : κ < 1) : Lemma5_NormPreservation κ := by
+  obtain ⟨n, a, b, ha, hab, hbound⟩ := h hκ0 hκ1
+  refine ⟨⟨n, Real.sqrt a, Real.sqrt b, 1⟩, Real.sqrt_pos.mpr ha, Real.sqrt_le_sqrt hab, ?_⟩
+  intro Ω _ μ _ m J hJ w hw
+  have hTpos : 0 < sqNorm w := sqNorm_pos hw
+  have hset : {ω | normRatio J w ω ∉ Set.Icc (Real.sqrt a) (Real.sqrt b)}
+      = {ω | sqNorm (proj J w ω) / sqNorm w ∉ Set.Icc a b} := by
+    ext ω
+    simp only [Set.mem_setOf_eq, normRatio_eq_sqrt]
+    refine not_congr ?_
+    have hz : 0 ≤ sqNorm (proj J w ω) / sqNorm w := div_nonneg (sqNorm_nonneg _) hTpos.le
+    rw [Set.mem_Icc, Set.mem_Icc]
+    constructor
+    · rintro ⟨h1, h2⟩
+      refine ⟨?_, ?_⟩
+      · have hsq : Real.sqrt a ^ 2 ≤ Real.sqrt (sqNorm (proj J w ω) / sqNorm w) ^ 2 := by gcongr
+        rwa [Real.sq_sqrt ha.le, Real.sq_sqrt hz] at hsq
+      · have hsq : Real.sqrt (sqNorm (proj J w ω) / sqNorm w) ^ 2 ≤ Real.sqrt b ^ 2 := by gcongr
+        rwa [Real.sq_sqrt hz, Real.sq_sqrt (ha.le.trans hab)] at hsq
+    · rintro ⟨h1, h2⟩
+      exact ⟨Real.sqrt_le_sqrt h1, Real.sqrt_le_sqrt h2⟩
+  rw [hset]
+  exact hbound μ J hJ w hw
 
 /-- **N2 (Lemma 5, inequality II — the hard half).** With the same parameters as N1, for a *norm*
 threshold `0 < θ ≤ q/b` and any `w ∈ [±q/2]^m` with `‖w‖₂ ≥ θ`, the reduced projection norm
