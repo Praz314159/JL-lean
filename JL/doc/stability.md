@@ -46,6 +46,19 @@ the full DAG and [`mathlib-audit.md`](mathlib-audit.md) for Mathlib coverage.
   row independence are the only remaining inputs; row independence (`hRowIndep : iIndepFun …`) is
   threaded as an explicit premise — it is **provable structural infrastructure** (block-independence
   of a product-indexed `iIndepFun` family, absent from Mathlib), *not* an analytic gap.
+- **Case 3 per-row transfer** ([`JL/Case3.lean`](../Case3.lean)) — Layers 2a–2d, the per-row bad
+  probability, fully proved **taking the Berry–Esseen CDF output and the Gaussian small-ball as
+  inputs** (`perRow_bound`): `μ{|⟨rᵢ,w⟩ mod q| ≤ c} ≤ (p₀ + 2δ) + 2e^{−(q−c)²/(2‖w‖₂²)}`. Pieces:
+  χ-moment lemmas (`IsChiEntry.thirdMoment`/`scaled_*`, giving `L = ‖w‖∞`); the two-sided
+  sub-Gaussian tail from N0 (`measureReal_abs_ge_le`/`rowInner_abs_ge_le`); the `Int.bmod`
+  center/wrap dichotomy (`abs_le_or_ge_of_centeredMod_le`) and its measure-level split
+  (`perRow_split`); and the lone Berry–Esseen application on the central interval
+  (`central_interval_le`, with the integer/atom boundary sidestepped by a strictly-lower cut). **This
+  is the constant accounting that was at issue** — the wrap goes to the sub-Gaussian tail, so exactly
+  one BE application (`2δ`, not `4δ`) is used. Remaining for a complete `Case3Hyp`: apply
+  `BerryEsseenHyp` over `supp w` to discharge the `hbe` input (χ-moment plumbing); the sub-vector +
+  conditioning reduction (to land `v` in the small-ball window for `‖w‖₂ ≫ q`); and the constant
+  chase `p₀ + 2δ + tiny < 1`.
 
 ## Assumed analytic inputs (named hypotheses — NOT proved here)
 
